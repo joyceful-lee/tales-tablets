@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#172653">
+  <meta name="description" content="Johnny Builds to Mars — an interactive storybook from Parker & Pine.">
+  <title>Johnny Builds to Mars · Parker &amp; Pine</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23172653'/%3E%3Ccircle cx='32' cy='32' r='18' fill='%23ff5b45'/%3E%3Cpath d='M19 27c8 5 18 6 27 1M22 39c7-3 14-2 20 2' fill='none' stroke='%23ffbd28' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <style>
+    :root { --navy:#172653; --ink:#13203f; --cream:#fff7df; --yellow:#ffca3a; --red:#ff5b45; --blue:#3a86ff; --mint:#5fd6a8; --paper:#fffdf5; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; min-height:100%; overflow-x:hidden; }
+    body { background:#101b3f; color:var(--ink); font-family:"Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif; }
+    button { font:inherit; }
+    button:focus-visible { outline:4px solid #fff; outline-offset:4px; }
+    .app { min-height:100svh; display:grid; grid-template-rows:auto 1fr auto; }
+    .topbar { min-height:64px; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px clamp(14px,3vw,36px); color:white; background:var(--navy); z-index:20; }
+    .brand { border:0; background:none; color:white; display:flex; align-items:center; gap:10px; cursor:pointer; padding:6px; font-weight:900; letter-spacing:.02em; }
+    .brand-mark { width:38px; height:32px; position:relative; display:inline-block; }
+    .brand-mark::before,.brand-mark::after { content:""; position:absolute; bottom:2px; width:21px; height:27px; background:var(--yellow); border-radius:65% 10% 65% 12%; }
+    .brand-mark::before { left:1px; transform:rotate(-18deg); } .brand-mark::after { right:1px; transform:scaleX(-1) rotate(-18deg); }
+    .tools { display:flex; align-items:center; gap:10px; }
+    .page-count { font-weight:900; color:#ffe995; min-width:70px; text-align:center; }
+    .sound { border:2px solid rgba(255,255,255,.55); color:white; background:rgba(255,255,255,.1); width:44px; height:44px; border-radius:50%; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.25); }
+    .book { position:relative; min-height:0; isolation:isolate; overflow:hidden; }
+    .page { position:absolute; inset:0; display:grid; opacity:0; transform:translateX(7%); pointer-events:none; transition:opacity .4s ease, transform .45s cubic-bezier(.2,.8,.2,1); overflow:auto; }
+    .page.active { opacity:1; transform:none; pointer-events:auto; z-index:2; }
+    .page.leaving { transform:translateX(-7%); }
+    .scene { min-height:calc(100svh - 144px); position:relative; display:grid; grid-template-columns:minmax(260px, 42%) 1fr; align-items:center; gap:clamp(18px,4vw,64px); padding:clamp(24px,5vw,70px); background-position:center; background-size:cover; }
+    .scene::before { content:""; position:absolute; inset:0; background:linear-gradient(90deg, rgba(12,24,55,.72) 0%, rgba(12,24,55,.35) 42%, rgba(12,24,55,.05) 70%); pointer-events:none; }
+    .story { position:relative; z-index:3; align-self:center; padding:clamp(20px,3.5vw,38px); border:3px solid rgba(20,32,63,.12); border-radius:28px 28px 38px 22px; background:rgba(255,253,245,.94); box-shadow:10px 12px 0 rgba(13,25,61,.28); max-width:560px; }
+    .kicker { margin:0 0 9px; color:#b62f28; font-size:.85rem; font-weight:900; text-transform:uppercase; letter-spacing:.15em; }
+    h1,h2 { margin:0; font-family:Georgia, "Times New Roman", serif; line-height:.95; letter-spacing:-.035em; }
+    h1 { font-size:clamp(3rem,8vw,7.3rem); color:white; text-shadow:0 6px 0 rgba(0,0,0,.25); max-width:900px; }
+    h2 { color:var(--navy); font-size:clamp(2.3rem,5vw,4.5rem); }
+    .rhyme { font-family:Georgia, "Times New Roman", serif; font-size:clamp(1.25rem,2.3vw,1.75rem); line-height:1.42; margin:18px 0 12px; }
+    .cue { display:inline-flex; align-items:center; gap:9px; margin:7px 0 0; color:#26345e; font-size:1rem; font-weight:900; }
+    .cue-dot { width:12px; height:12px; border-radius:50%; background:var(--red); box-shadow:0 0 0 0 rgba(255,91,69,.65); animation:pulse 1.5s infinite; }
+    .playzone { position:relative; z-index:4; min-height:390px; height:min(61vh,620px); }
+    .cover .scene { grid-template-columns:1fr; text-align:center; place-items:center; background-image:linear-gradient(rgba(13,28,67,.15),rgba(13,28,67,.68)), url('assets/night.png'); }
+    .cover .scene::before { background:radial-gradient(circle at 70% 30%, transparent, rgba(6,14,40,.28)); }
+    .cover-content { position:relative; z-index:3; display:grid; justify-items:center; gap:20px; }
+    .eyebrow { color:#fff3ba; font-weight:900; letter-spacing:.18em; text-transform:uppercase; }
+    .open-book,.action { border:0; cursor:pointer; border-radius:999px; background:var(--yellow); color:var(--ink); padding:16px 26px; font-weight:900; font-size:1.15rem; box-shadow:0 7px 0 #c46b1e; transition:transform .16s, box-shadow .16s; }
+    .open-book:hover,.action:hover { transform:translateY(-3px) rotate(-1deg); box-shadow:0 10px 0 #c46b1e; }
+    .open-book:active,.action:active { transform:translateY(5px); box-shadow:0 2px 0 #c46b1e; }
+    .open-book span { display:inline-block; animation:wiggle 1.9s infinite; }
+    .night { background-image:url('assets/night.png'); }
+    .star { position:absolute; border:0; background:none; color:#fff4a9; font-size:clamp(2.2rem,5vw,4.8rem); cursor:pointer; filter:drop-shadow(0 4px 2px rgba(0,0,0,.35)); transition:transform .2s, color .2s; animation:float 3s ease-in-out infinite; }
+    .star:nth-child(1){left:8%;top:8%}.star:nth-child(2){left:50%;top:16%;animation-delay:.4s}.star:nth-child(3){left:25%;top:54%;animation-delay:.8s}.star:nth-child(4){right:8%;top:50%;animation-delay:1.2s}
+    .star.on { color:var(--yellow); transform:scale(1.45) rotate(18deg); text-shadow:0 0 22px #fff; animation:star-pop .55s both; }
+    .thought { position:absolute; right:10%; bottom:7%; padding:14px 20px; background:white; border-radius:25px; font-weight:900; font-size:1.2rem; opacity:0; transform:scale(.5) rotate(8deg); transition:.4s; box-shadow:5px 7px 0 var(--navy); }
+    .thought.show { opacity:1; transform:scale(1) rotate(-2deg); }
+    .supplies { background:linear-gradient(135deg,#77d8ef 0 45%,#ffd95f 45% 100%); }
+    .supplies::before { background-image:radial-gradient(#fff 1.8px,transparent 2px); background-size:26px 26px; opacity:.35; }
+    .supply-grid { display:grid; grid-template-columns:repeat(2,minmax(100px,1fr)); gap:14px; align-content:center; max-width:520px; margin:auto; }
+    .supply { min-height:116px; border:3px solid var(--ink); border-radius:24px; background:var(--paper); color:var(--ink); font-size:2.5rem; box-shadow:6px 7px 0 var(--ink); cursor:grab; transition:.2s; }
+    .supply small { display:block; font-size:.9rem; font-weight:900; margin-top:4px; }
+    .supply:hover { transform:translateY(-5px) rotate(2deg); }
+    .supply.packed { opacity:.25; transform:scale(.8); pointer-events:none; box-shadow:none; }
+    .basket { grid-column:1/-1; min-height:94px; display:grid; place-items:center; border:4px dashed var(--ink); border-radius:30px 30px 12px 12px; background:rgba(255,255,255,.46); font-weight:900; font-size:1.1rem; transition:.25s; }
+    .basket.over { background:var(--mint); transform:scale(1.03); }
+    .basket.done { background:var(--mint); border-style:solid; animation:bounce .6s; }
+    .garage { background-image:url('assets/garage.png'); }
+    .garage.scene::before { background:linear-gradient(90deg,rgba(13,26,60,.58),rgba(13,26,60,.08)); }
+    .part { position:absolute; border:3px solid white; border-radius:50%; width:74px; height:74px; background:var(--red); color:white; font-size:2rem; cursor:pointer; box-shadow:0 7px 0 var(--navy),0 0 0 7px rgba(255,255,255,.3); animation:float 2.6s ease-in-out infinite; }
+    .part:nth-child(1){left:4%;top:12%}.part:nth-child(2){right:8%;top:10%;animation-delay:.3s}.part:nth-child(3){left:15%;bottom:9%;animation-delay:.6s}.part:nth-child(4){right:15%;bottom:14%;animation-delay:.9s}
+    .part.fixed { animation:part-fly .55s forwards; pointer-events:none; }
+    .dog-says { position:absolute; right:1%; top:42%; background:white; border:3px solid var(--ink); border-radius:24px 24px 4px 24px; padding:12px 16px; font-weight:900; opacity:0; transform:translateY(18px); transition:.3s; }
+    .dog-says.show { opacity:1; transform:none; }
+    .launch-scene { background-image:url('assets/garage.png'); background-position:center; transition:transform 1.2s cubic-bezier(.3,.9,.3,1),filter .5s; }
+    .launch-scene.scene::before { background:linear-gradient(90deg,rgba(13,26,60,.68),rgba(13,26,60,.03)); }
+    .launch-scene.liftoff { transform:translateY(-90vh) scale(1.15); filter:brightness(1.7); }
+    .launch-wrap { display:grid; place-items:center; height:100%; }
+    .launch-btn { width:min(260px,62vw); aspect-ratio:1; border:12px solid #fff; border-radius:50%; background:var(--red); color:white; font-size:clamp(1.5rem,4vw,2.5rem); font-weight:900; cursor:pointer; box-shadow:0 13px 0 #9d241f,0 0 0 10px rgba(23,38,83,.55); position:relative; overflow:hidden; }
+    .launch-btn::before { content:""; position:absolute; left:0; right:0; bottom:0; height:var(--hold,0%); background:#ff9f1c; transition:height .1s linear; }
+    .launch-btn span { position:relative; z-index:1; }
+    .launch-btn.ready { animation:shake .12s infinite; }
+    .whoosh { position:fixed; inset:0; z-index:40; display:grid; place-items:center; color:white; background:radial-gradient(circle,var(--red),var(--navy)); font-size:clamp(4rem,15vw,10rem); font-family:Georgia,serif; font-weight:900; opacity:0; pointer-events:none; transform:scale(.6); transition:.5s; }
+    .whoosh.show { opacity:1; transform:scale(1); }
+    .mars { background-image:url('assets/mars.png'); }
+    .mars.scene::before { background:linear-gradient(90deg,rgba(38,7,42,.58),transparent 60%); }
+    .lunchbox { position:absolute; left:20%; bottom:9%; width:170px; height:120px; border:5px solid var(--navy); border-radius:20px; background:#4ecdc4; color:var(--navy); font-size:1.1rem; font-weight:900; cursor:pointer; box-shadow:8px 9px 0 rgba(23,38,83,.7); transform:rotate(-4deg); transition:.4s; }
+    .lunchbox::before { content:""; position:absolute; width:80px; height:35px; border:7px solid var(--navy); border-bottom:0; border-radius:28px 28px 0 0; top:-36px; left:39px; }
+    .lunchbox.open { transform:rotate(3deg) scale(1.15); background:white; }
+    .crumbs { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:2.5rem; opacity:0; }
+    .lunchbox.open .crumbs { opacity:1; animation:bounce .7s; }
+    .finale { position:absolute; right:4%; bottom:7%; border:0; border-radius:999px; background:var(--yellow); color:var(--ink); padding:17px 24px; font-weight:900; cursor:pointer; box-shadow:0 7px 0 #9f4e21; opacity:0; pointer-events:none; transform:translateY(30px); transition:.35s; }
+    .finale.show { opacity:1; pointer-events:auto; transform:none; }
+    .ending { position:fixed; inset:0; z-index:50; display:none; place-items:center; text-align:center; padding:24px; background:rgba(15,25,58,.94); color:white; }
+    .ending.show { display:grid; animation:fade .4s both; }
+    .ending-card { max-width:620px; }
+    .ending h2 { color:var(--yellow); font-size:clamp(3rem,9vw,6rem); }
+    .ending p { font-family:Georgia,serif; font-size:clamp(1.25rem,3vw,1.8rem); line-height:1.45; }
+    .bottom-nav { min-height:80px; display:grid; grid-template-columns:130px 1fr 130px; align-items:center; gap:14px; padding:10px clamp(14px,3vw,34px); background:var(--cream); border-top:4px solid var(--navy); z-index:20; }
+    .nav-btn { min-height:50px; border:3px solid var(--navy); border-radius:18px; background:white; color:var(--navy); font-weight:900; cursor:pointer; box-shadow:0 4px 0 var(--navy); }
+    .nav-btn:hover:not(:disabled) { background:var(--yellow); transform:translateY(-2px); }
+    .nav-btn:disabled { opacity:.28; cursor:not-allowed; box-shadow:none; }
+    .dots { display:flex; justify-content:center; gap:8px; }
+    .dot { width:13px; height:13px; padding:0; border:2px solid var(--navy); border-radius:50%; background:transparent; cursor:pointer; }
+    .dot.active { width:30px; border-radius:10px; background:var(--red); }
+    .celebrate { position:fixed; z-index:60; font-size:2rem; pointer-events:none; animation:confetti 1.4s forwards; }
+    .sr-only { position:absolute!important; width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+    @keyframes pulse{70%{box-shadow:0 0 0 12px rgba(255,91,69,0)}} @keyframes wiggle{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-12deg)}92%{transform:rotate(12deg)}}
+    @keyframes float{50%{transform:translateY(-10px) rotate(4deg)}} @keyframes star-pop{40%{transform:scale(1.8) rotate(24deg)}100%{transform:scale(1.35) rotate(12deg)}}
+    @keyframes bounce{40%{transform:scale(1.12)}70%{transform:scale(.95)}} @keyframes part-fly{to{transform:translate(-10vw,18vh) scale(0) rotate(360deg);opacity:0}}
+    @keyframes shake{25%{transform:translateX(-3px) rotate(-1deg)}75%{transform:translateX(3px) rotate(1deg)}} @keyframes fade{from{opacity:0}}
+    @keyframes confetti{to{transform:translate(var(--x),100vh) rotate(620deg);opacity:0}}
+    @media (max-width:780px){
+      .topbar{min-height:58px}.brand-text{font-size:.85rem}.page-count{font-size:.9rem;min-width:auto}
+      .scene{min-height:calc(100svh - 132px);grid-template-columns:1fr;grid-template-rows:auto 1fr;gap:10px;padding:18px 16px 24px;background-position:center}
+      .scene::before{background:linear-gradient(180deg,rgba(12,24,55,.54),rgba(12,24,55,.05))}
+      .story{padding:18px 20px;border-radius:21px;max-width:100%}.kicker{font-size:.72rem}h2{font-size:clamp(2rem,10vw,3rem)}.rhyme{font-size:1.08rem;margin:10px 0 5px}.cue{font-size:.88rem}
+      .playzone{min-height:260px;height:38vh}.supplies .playzone{height:auto}.supply-grid{grid-template-columns:repeat(4,1fr);gap:7px}.supply{min-height:80px;font-size:1.8rem;padding:6px}.supply small{font-size:.65rem}.basket{min-height:66px}
+      .part{width:59px;height:59px;font-size:1.5rem}.dog-says{top:auto;bottom:3%;right:2%;font-size:.8rem}.lunchbox{left:8%;width:135px;height:94px}.lunchbox::before{left:27px}.finale{right:4%;bottom:4%}
+      .bottom-nav{min-height:74px;grid-template-columns:92px 1fr 92px;padding:9px}.nav-btn{min-height:48px}.dot{width:10px;height:10px}.dot.active{width:23px}
+    }
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <button class="brand" id="homeBtn" aria-label="Return to the cover"><span class="brand-mark" aria-hidden="true"></span><span class="brand-text">PARKER &amp; PINE</span></button>
+    <div class="tools"><span class="page-count" id="pageCount">Cover</span><button class="sound" id="readBtn" aria-label="Read this page aloud" title="Read this page aloud">🔊</button></div>
+  </header>
+  <main class="book" id="book">
+    <section class="page cover active" data-title="Cover" data-read="Johnny Builds to Mars, a Parker and Pine story.">
+      <div class="scene"><div class="cover-content"><p class="eyebrow">A Parker &amp; Pine Story</p><h1>Johnny Builds<br>to Mars</h1><button class="open-book" data-go="1"><span>🚀</span> Open the book</button></div></div>
+    </section>
+    <section class="page" data-title="A bright idea" data-read="One wink from Mars in the velvety blue, made Johnny shout, I can visit you! He sketched a ship by the moon's silver light. A rocket by breakfast? That sounds about right.">
+      <div class="scene night"><article class="story"><p class="kicker">1 · A bright idea</p><h2>A wink from Mars</h2><p class="rhyme">One wink from Mars in the velvety blue<br>made Johnny shout, “I can visit you!”<br>He sketched a ship by the moon’s silver light.<br>“A rocket by breakfast? That sounds about right.”</p><p class="cue"><span class="cue-dot"></span> Tap all four twinkly stars</p></article><div class="playzone" id="stars"><button class="star" aria-label="Twinkle star 1">✦</button><button class="star" aria-label="Twinkle star 2">★</button><button class="star" aria-label="Twinkle star 3">✧</button><button class="star" aria-label="Twinkle star 4">★</button><div class="thought">IDEA! Build a rocket! 🚀</div></div></div>
+    </section>
+    <section class="page" data-title="Supply safari" data-read="He hunted the house from the den to the stair, for tape, wheels and pillows and one kitchen chair. A colander helmet, a box, and some string. If it rattled or rolled, it could probably fling.">
+      <div class="scene supplies"><article class="story"><p class="kicker">2 · Supply safari</p><h2>Pack the parts</h2><p class="rhyme">He hunted the house from the den to the stair<br>for tape, wheels, and pillows—and one kitchen chair.<br>A colander helmet, a box, and some string…<br>If it rattled or rolled, it could probably fling!</p><p class="cue"><span class="cue-dot"></span> Tap or drag each thing into the basket</p></article><div class="playzone"><div class="supply-grid"><button class="supply" draggable="true" data-item="Tape">🧻<small>TAPE</small></button><button class="supply" draggable="true" data-item="Chair">🪑<small>CHAIR</small></button><button class="supply" draggable="true" data-item="Pillow">🛏️<small>PILLOW</small></button><button class="supply" draggable="true" data-item="Pot">🥣<small>HELMET</small></button><div class="basket" id="basket" tabindex="0">DROP SUPPLIES HERE · 0/4</div></div></div></div>
+    </section>
+    <section class="page" data-title="Garage genius" data-read="He taped up the tail and he bolted the nose. The dog raised one eyebrow, as doubtful dogs do. Four wheels? asked the dog. Johnny yelled, Maybe two!">
+      <div class="scene garage"><article class="story"><p class="kicker">3 · Garage genius</p><h2>Clunk, tape, done!</h2><p class="rhyme">He taped up the tail and he bolted the nose.<br>The dog raised one eyebrow and wiggled his toes.<br>“Four wheels?” asked the dog. “That seems quite a few.”<br>Johnny grinned, “You’re right—so I’ll only use two!”</p><p class="cue"><span class="cue-dot"></span> Tap four parts to finish the rocket</p></article><div class="playzone" id="parts"><button class="part" aria-label="Add tape">🩹</button><button class="part" aria-label="Add wheel">⚙️</button><button class="part" aria-label="Add cushion">🛏️</button><button class="part" aria-label="Add star">⭐</button><div class="dog-says">…I have concerns. 🐶</div></div></div>
+    </section>
+    <section class="page" data-title="Blast off" data-read="With goggles on tight and a howl from the hound, Johnny pressed go with a thunderous sound. The garage gave a rattle, the flowerpots flew. The rocket yelled whee and the dog hollered too.">
+      <div class="scene launch-scene" id="launchScene"><article class="story"><p class="kicker">4 · Blast off!</p><h2>More zoom than plan</h2><p class="rhyme">With goggles on tight and a howl from the hound,<br>Johnny pressed GO with a thunderous sound.<br>The garage gave a rattle. The flowerpots flew!<br>The rocket yelled “WHEEE!”—and the dog hollered too.</p><p class="cue"><span class="cue-dot"></span> Press and hold for liftoff</p></article><div class="playzone launch-wrap"><button class="launch-btn" id="launchBtn"><span>HOLD TO<br>LAUNCH</span></button></div></div>
+    </section>
+    <section class="page" data-title="Mars at last" data-read="They bumped onto Mars with a bounce and a thud. Red dust on their elbows, red dust in their blood. Johnny opened his lunchbox, then started to stare. He packed half the garage, but no snacks were in there.">
+      <div class="scene mars"><article class="story"><p class="kicker">5 · Mars at last</p><h2>One tiny problem…</h2><p class="rhyme">They bumped onto Mars with a bounce and a thud—<br>red dust on their elbows, red dust in the mud.<br>Johnny opened his lunchbox, then started to stare:<br>He packed half the garage… but no snacks were in there!</p><p class="cue"><span class="cue-dot"></span> Tap Johnny’s lunchbox</p></article><div class="playzone"><button class="lunchbox" id="lunchbox"><span>OPEN ME</span><span class="crumbs">···</span></button><button class="finale" id="finale">Finish the story ✨</button></div></div>
+    </section>
+  </main>
+  <nav class="bottom-nav" aria-label="Story pages"><button class="nav-btn" id="backBtn">← Back</button><div class="dots" id="dots" aria-label="Choose a page"></div><button class="nav-btn" id="nextBtn">Next →</button></nav>
+</div>
+<div class="whoosh" id="whoosh">WHEEE!</div>
+<div class="ending" id="ending" role="dialog" aria-modal="true" aria-labelledby="endTitle"><div class="ending-card"><h2 id="endTitle">The End!</h2><p>They found no snacks, but they found a grand view.<br>So they waved home to Earth… then back home they flew.</p><button class="action" id="againBtn">Read it again</button></div></div>
+<div class="sr-only" id="status" aria-live="polite"></div>
+<script>
+  const pages=[...document.querySelectorAll('.page')], dots=document.getElementById('dots');
+  const count=document.getElementById('pageCount'), back=document.getElementById('backBtn'), next=document.getElementById('nextBtn'), status=document.getElementById('status');
+  let page=0, speaking=false;
+  pages.forEach((_,i)=>{const d=document.createElement('button');d.className='dot';d.setAttribute('aria-label',i===0?'Go to cover':`Go to page ${i}`);d.onclick=()=>show(i);dots.appendChild(d)});
+  function tone(freq=440,duration=.08){if(!soundOn)return;try{const A=window.AudioContext||window.webkitAudioContext,ctx=tone.ctx||(tone.ctx=new A),o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=freq;o.type='sine';g.gain.setValueAtTime(.07,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+duration);o.connect(g).connect(ctx.destination);o.start();o.stop(ctx.currentTime+duration)}catch(e){}}
+  let soundOn=true;
+  function show(i){i=Math.max(0,Math.min(pages.length-1,i));speechSynthesis?.cancel();pages[page].classList.remove('active');page=i;pages[page].classList.add('active');count.textContent=page===0?'Cover':`Page ${page} of 5`;back.disabled=page===0;next.disabled=page===pages.length-1;[...dots.children].forEach((d,n)=>d.classList.toggle('active',n===page));status.textContent=`${pages[page].dataset.title}.`;tone(360+page*45);}
+  back.onclick=()=>show(page-1);next.onclick=()=>show(page+1);document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(+b.dataset.go));document.getElementById('homeBtn').onclick=()=>show(0);
+  document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')show(page+1);if(e.key==='ArrowLeft')show(page-1)});
+  document.getElementById('readBtn').onclick=()=>{if(!('speechSynthesis'in window)){status.textContent='Read aloud is not available in this browser.';return}if(speechSynthesis.speaking){speechSynthesis.cancel();speaking=false;return}const u=new SpeechSynthesisUtterance(pages[page].dataset.read);u.rate=.88;u.pitch=1.08;speechSynthesis.speak(u);speaking=true};
+  document.querySelectorAll('.star').forEach(s=>s.onclick=()=>{s.classList.add('on');tone(620+document.querySelectorAll('.star.on').length*80,.15);if(document.querySelectorAll('.star.on').length===4){document.querySelector('.thought').classList.add('show');status.textContent='All the stars are shining. Johnny has an idea!';confetti(10)}});
+  let packed=0; const basket=document.getElementById('basket');
+  function pack(el){if(el.classList.contains('packed'))return;el.classList.add('packed');packed++;basket.textContent=packed===4?'ALL PACKED! 🚀':`DROP SUPPLIES HERE · ${packed}/4`;tone(300+packed*90,.12);if(packed===4){basket.classList.add('done');status.textContent='All four supplies are packed!';confetti(12)}}
+  document.querySelectorAll('.supply').forEach(s=>{s.onclick=()=>pack(s);s.ondragstart=e=>e.dataTransfer.setData('text/plain',s.dataset.item)});
+  basket.ondragover=e=>{e.preventDefault();basket.classList.add('over')};basket.ondragleave=()=>basket.classList.remove('over');basket.ondrop=e=>{e.preventDefault();basket.classList.remove('over');pack(document.querySelector(`[data-item="${e.dataTransfer.getData('text/plain')}"]`))};
+  let fixed=0;document.querySelectorAll('.part').forEach(p=>p.onclick=()=>{if(p.classList.contains('fixed'))return;p.classList.add('fixed');fixed++;tone(260+fixed*100,.14);if(fixed===4){document.querySelector('.dog-says').classList.add('show');status.textContent='Rocket finished. The dog has concerns.';confetti(14)}});
+  const launchBtn=document.getElementById('launchBtn');let holdTimer,holdStart,holdRAF,launched=false;
+  function holdTick(){const pct=Math.min(100,(performance.now()-holdStart)/10);launchBtn.style.setProperty('--hold',pct+'%');if(pct<100)holdRAF=requestAnimationFrame(holdTick)}
+  function startHold(e){e.preventDefault();if(launched)return;holdStart=performance.now();launchBtn.classList.add('ready');holdRAF=requestAnimationFrame(holdTick);holdTimer=setTimeout(launch,1000);tone(150,.5)}
+  function stopHold(){if(launched)return;clearTimeout(holdTimer);cancelAnimationFrame(holdRAF);launchBtn.classList.remove('ready');launchBtn.style.setProperty('--hold','0%')}
+  function launch(){launched=true;launchBtn.classList.remove('ready');document.getElementById('launchScene').classList.add('liftoff');const w=document.getElementById('whoosh');w.classList.add('show');status.textContent='Liftoff!';confetti(25);tone(760,.7);setTimeout(()=>{w.classList.remove('show');show(5)},1250)}
+  launchBtn.addEventListener('pointerdown',startHold);['pointerup','pointerleave','pointercancel'].forEach(n=>launchBtn.addEventListener(n,stopHold));
+  document.getElementById('lunchbox').onclick=e=>{e.currentTarget.classList.add('open');e.currentTarget.querySelector('span:first-child').textContent='NO SNACKS!';document.getElementById('finale').classList.add('show');status.textContent='The lunchbox is empty. Johnny forgot the snacks!';tone(180,.25)};
+  document.getElementById('finale').onclick=()=>{document.getElementById('ending').classList.add('show');confetti(36);tone(540,.4)};
+  document.getElementById('againBtn').onclick=()=>{document.getElementById('ending').classList.remove('show');show(0)};
+  function confetti(n){const icons=['★','●','✦','◆'];for(let i=0;i<n;i++){const c=document.createElement('span');c.className='celebrate';c.textContent=icons[i%icons.length];c.style.left=Math.random()*100+'vw';c.style.top='-30px';c.style.color=['#ffca3a','#ff5b45','#5fd6a8','#3a86ff'][i%4];c.style.setProperty('--x',(Math.random()*180-90)+'px');c.style.animationDelay=Math.random()*.25+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),1800)}}
+  show(0);
+</script>
+</body>
+</html>
