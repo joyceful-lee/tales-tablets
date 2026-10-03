@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#182452">
+  <meta name="description" content="Johnny Builds to Mars — an interactive storybook from Parker & Pine.">
+  <title>Johnny Builds to Mars · Parker &amp; Pine</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <svg class="svg-defs" aria-hidden="true">
+    <symbol id="icon-speaker" viewBox="0 0 64 64"><path d="M10 25h12l15-12v38L22 39H10z" fill="currentColor"/><path d="M44 23c6 6 6 12 0 18M50 16c10 10 10 22 0 32" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/></symbol>
+    <symbol id="icon-star" viewBox="0 0 100 100"><path d="m50 5 11 30 32 1-25 20 9 32-27-18-27 18 9-32L7 36l32-1z" fill="currentColor" stroke="#17203f" stroke-width="5" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-rocket" viewBox="0 0 140 220"><path d="M70 8C40 31 33 72 35 139h70C107 72 100 31 70 8Z" fill="#fffdf6" stroke="#17203f" stroke-width="7"/><path d="M35 112 10 158l28-9M105 112l25 46-28-9" fill="#fa5a45" stroke="#17203f" stroke-width="7" stroke-linejoin="round"/><circle cx="70" cy="75" r="22" fill="#438cff" stroke="#17203f" stroke-width="7"/><path d="M50 142h40l-7 35H57z" fill="#ffd23f" stroke="#17203f" stroke-width="7"/><path d="m58 180 12 32 12-32" fill="#fa5a45" stroke="#17203f" stroke-width="7" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-tape" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="#b9e7e5" stroke="#17203f" stroke-width="7"/><circle cx="50" cy="50" r="15" fill="#fffdf6" stroke="#17203f" stroke-width="7"/><path d="M65 74h27L78 91H57z" fill="#d8f5f1" stroke="#17203f" stroke-width="6" stroke-linejoin="round"/></symbol>
+    <symbol id="icon-chair" viewBox="0 0 100 100"><path d="M25 10h43v48H25zM22 58h58v14H22zM30 70l-5 22M70 70l6 22" fill="#ffd23f" stroke="#17203f" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></symbol>
+    <symbol id="icon-pillow" viewBox="0 0 110 90"><path d="M15 16c20 8 60 8 80 0-6 18-6 40 0 58-20-8-60-8-80 0 6-18 6-40 0-58Z" fill="#fa91a1" stroke="#17203f" stroke-width="7" stroke-linejoin="round"/><path d="M30 31c13 5 37 5 50 0M30 59c13-5 37-5 50 0" fill="none" stroke="#fffdf6" stroke-width="5" stroke-linecap="round"/></symbol>
+    <symbol id="icon-helmet" viewBox="0 0 110 90"><path d="M13 41h84c0 29-17 41-42 41S13 70 13 41Z" fill="#d7dde6" stroke="#17203f" stroke-width="7"/><path d="M23 41C26 10 84 10 87 41M35 21v11M55 16v16M75 21v11" fill="none" stroke="#17203f" stroke-width="6" stroke-linecap="round"/></symbol>
+    <symbol id="icon-dog" viewBox="0 0 150 150"><path d="M35 57 14 24c-8 37 4 51 17 55M115 57l21-33c8 37-4 51-17 55" fill="#9a5c37" stroke="#17203f" stroke-width="7"/><path d="M28 72c0-36 94-36 94 0v28c0 44-94 44-94 0Z" fill="#b87849" stroke="#17203f" stroke-width="7"/><ellipse cx="75" cy="103" rx="31" ry="24" fill="#f1c98d"/><circle cx="54" cy="77" r="6" fill="#17203f"/><circle cx="96" cy="77" r="6" fill="#17203f"/><path d="m67 99 8 6 8-6M75 105v13m0 0c-9 0-13-3-16-8m16 8c9 0 13-3 16-8" fill="#17203f" stroke="#17203f" stroke-width="5" stroke-linecap="round"/></symbol>
+    <symbol id="icon-astronaut" viewBox="0 0 130 180"><circle cx="65" cy="48" r="39" fill="#fffdf6" stroke="#17203f" stroke-width="7"/><path d="M40 43c4-22 46-22 50 0v20H40Z" fill="#75d7ef" stroke="#17203f" stroke-width="6"/><path d="M36 83h58l12 68H24Z" fill="#fffdf6" stroke="#17203f" stroke-width="7"/><path d="M24 93 7 128M106 93l17 35M43 149l-5 24M87 149l5 24" fill="none" stroke="#17203f" stroke-width="12" stroke-linecap="round"/><circle cx="54" cy="52" r="4" fill="#17203f"/><circle cx="77" cy="52" r="4" fill="#17203f"/></symbol>
+  </svg>
+  <div class="app">
+    <header class="topbar">
+      <button class="brand" id="homeBtn" aria-label="Return to the cover"><span class="brand-mark">PP</span><span>PARKER &amp; PINE</span></button>
+      <div class="tools"><span id="pageCount">Cover</span><button class="round-btn" id="readBtn" aria-label="Read this page aloud"><svg><use href="#icon-speaker"></use></svg></button></div>
+    </header>
+
+    <main class="book">
+      <section class="page cover active" data-title="Cover" data-read="Johnny Builds to Mars, a Parker and Pine story.">
+        <div class="cover-stars" aria-hidden="true"><svg><use href="#icon-star"></use></svg><svg><use href="#icon-star"></use></svg><svg><use href="#icon-star"></use></svg></div>
+        <div class="cover-copy"><p class="eyebrow">A PARKER &amp; PINE STORY</p><h1>Johnny Builds<br>to Mars</h1><svg class="cover-rocket" aria-hidden="true"><use href="#icon-rocket"></use></svg><button class="primary" data-go="1">Open the book</button></div>
+        <div class="planet planet-red" aria-hidden="true"></div><div class="planet planet-ring" aria-hidden="true"></div>
+      </section>
+
+      <section class="page night" data-title="A bright idea" data-read="One wink from Mars in the velvety blue made Johnny shout, I can visit you! He sketched a ship by the moon's silver light. A rocket by breakfast? That sounds about right.">
+        <article class="story-card"><p class="kicker">1 · A BRIGHT IDEA</p><h2>A wink from Mars</h2><p class="rhyme">One wink from Mars in the velvety blue<br>made Johnny shout, “I can visit you!”<br>He sketched a ship by the moon’s silver light.<br>“A rocket by breakfast? That sounds about right.”</p><p class="cue">Tap all four twinkly stars</p></article>
+        <div class="playzone stars" id="stars"><div class="moon" aria-hidden="true"></div><div class="big-mars" aria-hidden="true">MARS</div><button class="star s1" aria-label="Twinkle star 1"><svg><use href="#icon-star"></use></svg></button><button class="star s2" aria-label="Twinkle star 2"><svg><use href="#icon-star"></use></svg></button><button class="star s3" aria-label="Twinkle star 3"><svg><use href="#icon-star"></use></svg></button><button class="star s4" aria-label="Twinkle star 4"><svg><use href="#icon-star"></use></svg></button></div>
+      </section>
+
+      <section class="page supplies" data-title="Supply safari" data-read="He hunted the house from the den to the stair, for tape, wheels and pillows and one kitchen chair. A colander helmet, a box, and some string. If it rattled or rolled, it could probably fling.">
+        <article class="story-card"><p class="kicker">2 · SUPPLY SAFARI</p><h2>Find the parts</h2><p class="rhyme">He hunted the house from the den to the stair<br>for tape, wheels, and pillows—and one kitchen chair.<br>A colander helmet, a box, and some string…<br>If it rattled or rolled, it could probably fling!</p><p class="cue">Find each hidden item, then drag it to the crate</p></article>
+        <div class="playzone hidden-room" id="supplyZone">
+          <svg class="room-art" viewBox="0 0 700 460" preserveAspectRatio="none" aria-hidden="true"><path d="M0 0h700v315H0z" fill="#f1c980"/><path d="M0 315h700v145H0z" fill="#a8663d"/><path d="M38 70h225v24H38zm0 130h225v24H38z" fill="#5a3a37"/><path d="M55 30h60v40H55zm82 4h28v36h-28zm44 12h66v24h-66z" fill="#6aa5a5" stroke="#17203f" stroke-width="6"/><path d="M61 115h34v84H61zm51 28h62v56h-62zm79-19h52v75h-52z" fill="#db6a55" stroke="#17203f" stroke-width="6"/><path d="M312 82h120v210H312z" fill="#8f5b3f" stroke="#17203f" stroke-width="7"/><circle cx="372" cy="185" r="7" fill="#ffd23f"/><path d="M492 55h155v170H492z" fill="#74aec2" stroke="#17203f" stroke-width="7"/><path d="M507 72h125v136H507z" fill="#d9f0ee"/><path d="m507 208 44-68 38 36 43-60v92z" fill="#8bbf86"/><path d="M510 282h115v46H510zm-182 66h116v76H328zM38 337h148v88H38z" fill="#d08a46" stroke="#17203f" stroke-width="7"/><path d="m210 300 54 15-22 98-54-12z" fill="#7ca2c2" stroke="#17203f" stroke-width="7"/><path d="M474 355h172v18H474zm22 18v48m126-48v48" fill="none" stroke="#17203f" stroke-width="9" stroke-linecap="round"/><circle cx="286" cy="395" r="25" fill="#70b69a" stroke="#17203f" stroke-width="7"/><path d="m276 374 13-29 14 31" fill="#70b69a" stroke="#17203f" stroke-width="7"/></svg>
+          <button class="supply supply-tape" data-item="Tape" aria-label="Drag the hidden tape to the packing crate"><svg><use href="#icon-tape"></use></svg></button>
+          <button class="supply supply-chair" data-item="Chair" aria-label="Drag the hidden chair to the packing crate"><svg><use href="#icon-chair"></use></svg></button>
+          <button class="supply supply-pillow" data-item="Pillow" aria-label="Drag the hidden pillow to the packing crate"><svg><use href="#icon-pillow"></use></svg></button>
+          <button class="supply supply-helmet" data-item="Helmet" aria-label="Drag the hidden helmet to the packing crate"><svg><use href="#icon-helmet"></use></svg></button>
+          <div class="basket" id="basket"><span>PACKING CRATE</span><b id="packedCount">0/4</b></div>
+          <ul class="find-list" aria-label="Items to find"><li data-find="Tape">Tape</li><li data-find="Chair">Chair</li><li data-find="Pillow">Pillow</li><li data-find="Helmet">Helmet</li></ul>
+        </div>
+      </section>
+
+      <section class="page garage" data-title="Garage genius" data-read="He taped up the tail and he bolted the nose. The dog raised one eyebrow, as doubtful dogs do. Four wheels, asked the dog. Johnny yelled, maybe two!">
+        <article class="story-card"><p class="kicker">3 · GARAGE GENIUS</p><h2>Clunk, tape, done!</h2><p class="rhyme">He taped up the tail and he bolted the nose.<br>The dog raised one eyebrow and wiggled his toes.<br>“Four wheels?” asked the dog. “That seems quite a few.”<br>Johnny grinned, “You’re right—so I’ll only use two!”</p><p class="cue">Drag each part near its matching outline</p></article>
+        <div class="playzone workshop" id="puzzleZone">
+          <div class="rocket-body" aria-label="Unfinished rocket"><svg viewBox="0 0 180 280"><path d="M48 72h84v160H48z" fill="#fffdf6" stroke="#17203f" stroke-width="7"/><circle cx="90" cy="128" r="25" fill="#438cff" stroke="#17203f" stroke-width="7"/><path d="M68 210h44v35H68z" fill="#ffd23f" stroke="#17203f" stroke-width="7"/></svg><div class="snap-target nose-target" data-slot="nose"></div><div class="snap-target left-fin-target" data-slot="left-fin"></div><div class="snap-target right-fin-target" data-slot="right-fin"></div><div class="snap-target flame-target" data-slot="flame"></div></div>
+          <svg class="dog" aria-hidden="true"><use href="#icon-dog"></use></svg>
+          <button class="puzzle-piece nose-piece" data-slot="nose" aria-label="Drag the red nose cone"><svg viewBox="0 0 100 80"><path d="M10 70C18 35 32 14 50 6c18 8 32 29 40 64Z" fill="#fa5a45" stroke="#17203f" stroke-width="7" stroke-linejoin="round"/></svg></button>
+          <button class="puzzle-piece left-fin-piece" data-slot="left-fin" aria-label="Drag the left fin"><svg viewBox="0 0 90 110"><path d="M76 13C38 33 17 65 10 99l67-24Z" fill="#fa5a45" stroke="#17203f" stroke-width="7" stroke-linejoin="round"/></svg></button>
+          <button class="puzzle-piece right-fin-piece" data-slot="right-fin" aria-label="Drag the right fin"><svg viewBox="0 0 90 110"><path d="M14 13c38 20 59 52 66 86L13 75Z" fill="#fa5a45" stroke="#17203f" stroke-width="7" stroke-linejoin="round"/></svg></button>
+          <button class="puzzle-piece flame-piece" data-slot="flame" aria-label="Drag the engine flame"><svg viewBox="0 0 90 110"><path d="m13 8 32 94L77 8 45 28Z" fill="#ffd23f" stroke="#17203f" stroke-width="7" stroke-linejoin="round"/><path d="m28 24 17 56 17-56-17 18Z" fill="#fa5a45"/></svg></button>
+          <div class="dog-says">I have<br>concerns.</div>
+        </div>
+      </section>
+
+      <section class="page launch" data-title="Blast off" data-read="With goggles on tight and a howl from the hound, Johnny pressed go with a thunderous sound. The garage gave a rattle, the flowerpots flew. The rocket yelled whee and the dog hollered too.">
+        <article class="story-card"><p class="kicker">4 · BLAST OFF!</p><h2>More zoom than plan</h2><p class="rhyme">With goggles on tight and a howl from the hound,<br>Johnny pressed GO with a thunderous sound.<br>The garage gave a rattle. The flowerpots flew!<br>The rocket yelled “WHEEE!”—and the dog hollered too.</p><p class="cue">Press and hold for liftoff</p></article>
+        <div class="playzone launch-zone"><svg class="launch-rocket" id="launchRocket" aria-hidden="true"><use href="#icon-rocket"></use></svg><button class="launch-btn" id="launchBtn"><span>HOLD TO<br>LAUNCH</span></button></div>
+      </section>
+
+      <section class="page mars" data-title="Mars at last" data-read="They bumped onto Mars with a bounce and a thud. Red dust on their elbows, red dust in the mud. Johnny opened his lunchbox, then started to stare. He packed half the garage, but no snacks were in there.">
+        <article class="story-card"><p class="kicker">5 · MARS AT LAST</p><h2>One tiny problem…</h2><p class="rhyme">They bumped onto Mars with a bounce and a thud—<br>red dust on their elbows, red dust in the mud.<br>Johnny opened his lunchbox, then started to stare:<br>He packed half the garage… but no snacks were in there!</p><p class="cue">Tap Johnny’s lunchbox</p></article>
+        <div class="playzone mars-zone"><div class="earth" aria-hidden="true">EARTH</div><div class="mars-team" aria-hidden="true"><svg><use href="#icon-astronaut"></use></svg><svg><use href="#icon-dog"></use></svg><svg><use href="#icon-rocket"></use></svg></div><button class="lunchbox" id="lunchbox"><span>OPEN ME</span><span class="crumbs">· · ·</span></button><button class="finale" id="finale">Finish the story</button></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Story pages"><button class="nav-btn" id="backBtn">Back</button><div class="dots" id="dots"></div><button class="nav-btn" id="nextBtn">Next</button></nav>
+  </div>
+  <div class="whoosh" id="whoosh"><span>WHEEE!</span><svg class="whoosh-rocket" aria-hidden="true"><use href="#icon-rocket"></use></svg><i class="flight-trail" aria-hidden="true"></i></div>
+  <div class="ending" id="ending" role="dialog" aria-modal="true"><div><h2>The End!</h2><p>They found no snacks, but they found a grand view.<br>So they waved home to Earth… then back home they flew.</p><button class="primary" id="againBtn">Read it again</button></div></div>
+  <div class="sr-only" id="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>
