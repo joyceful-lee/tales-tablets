@@ -3,10 +3,32 @@ const dots = document.getElementById('dots');
 const pageSelect = document.getElementById('pageSelect');
 const back = document.getElementById('backBtn');
 const next = document.getElementById('nextBtn');
+const skip = document.getElementById('skipBtn');
 const status = document.getElementById('status');
 let page = 0;
 let marsSuccess = false;
+let skipTimer;
 const pageLabels = ['Cover', 'Night sky', 'Find the parts', 'Build the rocket', 'Launch', 'Mars'];
+
+function isPageComplete(index) {
+  if (index <= 0) return true;
+  if (index === 1) return shipLit && document.querySelectorAll('.star.on').length === 4;
+  if (index === 2) return packed === 4;
+  if (index === 3) return lockedPieces === 4;
+  if (index === 4) return launched;
+  if (index === 5) return marsSuccess;
+  return true;
+}
+
+function updateNav() {
+  clearTimeout(skipTimer);
+  const complete = isPageComplete(page);
+  next.disabled = !complete;
+  skip.hidden = true;
+  if (!complete) {
+    skipTimer = setTimeout(() => { skip.hidden = false; }, 5000);
+  }
+}
 
 pages.forEach((_, index) => {
   const option = document.createElement('option');
@@ -20,10 +42,14 @@ pages.forEach((_, index) => {
   dots.appendChild(dot);
 });
 
+function audioContext() {
+  const Audio = window.AudioContext || window.webkitAudioContext;
+  return tone.context || (tone.context = new Audio());
+}
+
 function tone(frequency = 440, duration = .08) {
   try {
-    const Audio = window.AudioContext || window.webkitAudioContext;
-    const context = tone.context || (tone.context = new Audio());
+    const context = audioContext();
     const oscillator = context.createOscillator();
     const gain = context.createGain();
     oscillator.frequency.value = frequency;
@@ -35,6 +61,193 @@ function tone(frequency = 440, duration = .08) {
   } catch (error) {}
 }
 
+function playNoise(context, duration, filterFreq, volume = .16) {
+  const size = Math.max(1, Math.floor(context.sampleRate * duration));
+  const buffer = context.createBuffer(1, size, context.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < size; i += 1) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / size, 1.6);
+  const source = context.createBufferSource();
+  const filter = context.createBiquadFilter();
+  const gain = context.createGain();
+  source.buffer = buffer;
+  filter.type = 'bandpass';
+  filter.frequency.value = filterFreq;
+  filter.Q.value = .8;
+  gain.gain.setValueAtTime(volume, context.currentTime);
+  gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + duration);
+  source.connect(filter).connect(gain).connect(context.destination);
+  source.start();
+  source.stop(context.currentTime + duration);
+}
+
+function clatterThunk() {
+  try {
+    const context = audioContext();
+    const now = context.currentTime;
+    playNoise(context, .1, 920, .18);
+    playNoise(context, .07, 1400, .1);
+    const thunk = context.createOscillator();
+    const thunkGain = context.createGain();
+    thunk.type = 'triangle';
+    thunk.frequency.setValueAtTime(170, now);
+    thunk.frequency.exponentialRampToValueAtTime(48, now + .16);
+    thunkGain.gain.setValueAtTime(.001, now);
+    thunkGain.gain.exponentialRampToValueAtTime(.22, now + .012);
+    thunkGain.gain.exponentialRampToValueAtTime(.001, now + .2);
+    thunk.connect(thunkGain).connect(context.destination);
+    thunk.start(now);
+    thunk.stop(now + .22);
+    const clack = context.createOscillator();
+    const clackGain = context.createGain();
+    clack.type = 'square';
+    clack.frequency.setValueAtTime(420, now + .04);
+    clack.frequency.exponentialRampToValueAtTime(140, now + .1);
+    clackGain.gain.setValueAtTime(.001, now + .04);
+    clackGain.gain.exponentialRampToValueAtTime(.08, now + .05);
+    clackGain.gain.exponentialRampToValueAtTime(.001, now + .12);
+    clack.connect(clackGain).connect(context.destination);
+    clack.start(now + .04);
+    clack.stop(now + .13);
+  } catch (error) {}
+}
+
+function hammerHit() {
+  try {
+    const context = audioContext();
+    const now = context.currentTime;
+    playNoise(context, .05, 1800, .2);
+    const strike = context.createOscillator();
+    const strikeGain = context.createGain();
+    strike.type = 'square';
+    strike.frequency.setValueAtTime(220, now);
+    strike.frequency.exponentialRampToValueAtTime(70, now + .08);
+    strikeGain.gain.setValueAtTime(.001, now);
+    strikeGain.gain.exponentialRampToValueAtTime(.18, now + .008);
+    strikeGain.gain.exponentialRampToValueAtTime(.001, now + .12);
+    strike.connect(strikeGain).connect(context.destination);
+    strike.start(now);
+    strike.stop(now + .13);
+    const ring = context.createOscillator();
+    const ringGain = context.createGain();
+    ring.type = 'triangle';
+    ring.frequency.setValueAtTime(640, now);
+    ring.frequency.exponentialRampToValueAtTime(210, now + .18);
+    ringGain.gain.setValueAtTime(.001, now);
+    ringGain.gain.exponentialRampToValueAtTime(.09, now + .01);
+    ringGain.gain.exponentialRampToValueAtTime(.001, now + .22);
+    ring.connect(ringGain).connect(context.destination);
+    ring.start(now);
+    ring.stop(now + .24);
+  } catch (error) {}
+}
+
+function barkSound() {
+  try {
+    const context = audioContext();
+    context.resume?.();
+    const now = context.currentTime + .01;
+    const duration = .38;
+    const size = Math.floor(context.sampleRate * duration);
+    const buffer = context.createBuffer(1, size, context.sampleRate);
+    const samples = buffer.getChannelData(0);
+    let brown = 0;
+    for (let i = 0; i < size; i += 1) {
+      const time = i / context.sampleRate;
+      const attack = Math.min(1, time / .008);
+      const decay = Math.pow(Math.max(0, 1 - time / duration), 2.6);
+      brown = brown * .93 + (Math.random() * 2 - 1) * .07;
+      samples[i] = (brown * .75 + (Math.random() * 2 - 1) * .25) * attack * decay;
+    }
+
+    const noise = context.createBufferSource();
+    const throat = context.createBiquadFilter();
+    const warmth = context.createBiquadFilter();
+    const barkGain = context.createGain();
+    noise.buffer = buffer;
+    throat.type = 'bandpass';
+    throat.Q.value = 1.25;
+    throat.frequency.setValueAtTime(720, now);
+    throat.frequency.exponentialRampToValueAtTime(180, now + duration);
+    warmth.type = 'lowpass';
+    warmth.frequency.setValueAtTime(1700, now);
+    warmth.frequency.exponentialRampToValueAtTime(620, now + duration);
+    barkGain.gain.setValueAtTime(.001, now);
+    barkGain.gain.exponentialRampToValueAtTime(.52, now + .009);
+    barkGain.gain.exponentialRampToValueAtTime(.16, now + .11);
+    barkGain.gain.exponentialRampToValueAtTime(.001, now + duration);
+    noise.connect(throat).connect(warmth).connect(barkGain).connect(context.destination);
+    noise.start(now);
+    noise.stop(now + duration);
+
+    const addVoice = (type, startFrequency, endFrequency, peak, length) => {
+      const voice = context.createOscillator();
+      const voiceGain = context.createGain();
+      voice.type = type;
+      voice.frequency.setValueAtTime(startFrequency, now);
+      voice.frequency.exponentialRampToValueAtTime(endFrequency, now + length);
+      voiceGain.gain.setValueAtTime(.001, now);
+      voiceGain.gain.exponentialRampToValueAtTime(peak, now + .012);
+      voiceGain.gain.exponentialRampToValueAtTime(.001, now + length);
+      voice.connect(voiceGain).connect(context.destination);
+      voice.start(now);
+      voice.stop(now + length);
+    };
+    addVoice('sawtooth', 205, 82, .11, .3);
+    addVoice('triangle', 410, 145, .055, .22);
+  } catch (error) {}
+}
+
+function launchBlast() {
+  try {
+    const context = audioContext();
+    context.resume?.();
+    const now = context.currentTime + .01;
+    const duration = 1.35;
+    const size = Math.floor(context.sampleRate * duration);
+    const buffer = context.createBuffer(1, size, context.sampleRate);
+    const samples = buffer.getChannelData(0);
+    let lowNoise = 0;
+    for (let i = 0; i < size; i += 1) {
+      const time = i / context.sampleRate;
+      const attack = Math.min(1, time / .035);
+      const decay = Math.pow(Math.max(0, 1 - time / duration), .72);
+      lowNoise = lowNoise * .965 + (Math.random() * 2 - 1) * .035;
+      const crackle = Math.random() > .985 ? (Math.random() * 2 - 1) * .8 : 0;
+      samples[i] = (lowNoise * .72 + (Math.random() * 2 - 1) * .28 + crackle) * attack * decay;
+    }
+    const blast = context.createBufferSource();
+    const lowpass = context.createBiquadFilter();
+    const highpass = context.createBiquadFilter();
+    const blastGain = context.createGain();
+    blast.buffer = buffer;
+    lowpass.type = 'lowpass';
+    lowpass.frequency.setValueAtTime(1450, now);
+    lowpass.frequency.exponentialRampToValueAtTime(420, now + duration);
+    highpass.type = 'highpass';
+    highpass.frequency.value = 38;
+    blastGain.gain.setValueAtTime(.001, now);
+    blastGain.gain.exponentialRampToValueAtTime(.42, now + .035);
+    blastGain.gain.exponentialRampToValueAtTime(.001, now + duration);
+    blast.connect(lowpass).connect(highpass).connect(blastGain).connect(context.destination);
+    blast.start(now);
+    blast.stop(now + duration);
+
+    [48, 63].forEach((frequency, index) => {
+      const rumble = context.createOscillator();
+      const gain = context.createGain();
+      rumble.type = 'sine';
+      rumble.frequency.setValueAtTime(frequency, now);
+      rumble.frequency.exponentialRampToValueAtTime(frequency * .72, now + 1.2);
+      gain.gain.setValueAtTime(.001, now);
+      gain.gain.exponentialRampToValueAtTime(index ? .055 : .11, now + .04);
+      gain.gain.exponentialRampToValueAtTime(.001, now + 1.25);
+      rumble.connect(gain).connect(context.destination);
+      rumble.start(now);
+      rumble.stop(now + 1.3);
+    });
+  } catch (error) {}
+}
+
 function show(index) {
   index = Math.max(0, Math.min(pages.length - 1, index));
   window.speechSynthesis?.cancel();
@@ -43,11 +256,14 @@ function show(index) {
   pages[page].classList.add('active');
   pageSelect.value = page;
   back.disabled = page === 0;
-  next.disabled = page === pages.length - 1 && !marsSuccess;
+  updateNav();
   [...dots.children].forEach((dot, i) => dot.classList.toggle('active', i === page));
   status.textContent = pageLabels[page];
   tone(360 + page * 45);
-  requestAnimationFrame(fitStoryCards);
+  requestAnimationFrame(() => {
+    fitStoryCards();
+    if (page === 1) sizeRocketCanvas();
+  });
 }
 
 function fitStoryCards() {
@@ -64,7 +280,10 @@ function fitStoryCards() {
     }
   });
 }
-window.addEventListener('resize', () => requestAnimationFrame(fitStoryCards));
+window.addEventListener('resize', () => requestAnimationFrame(() => {
+  fitStoryCards();
+  if (page === 1) sizeRocketCanvas();
+}));
 
 back.onclick = () => {
   const target = Math.max(0, page - 1);
@@ -72,8 +291,18 @@ back.onclick = () => {
   show(target);
 };
 next.onclick = () => {
+  if (!isPageComplete(page)) return;
   if (page === pages.length - 1) {
-    if (marsSuccess) showEnding();
+    showEnding();
+    return;
+  }
+  show(page + 1);
+};
+skip.onclick = () => {
+  if (page === pages.length - 1) {
+    marsSuccess = true;
+    updateNav();
+    showEnding();
     return;
   }
   show(page + 1);
@@ -83,7 +312,14 @@ document.getElementById('homeBtn').onclick = () => { resetFrom(0); show(0); };
 document.querySelectorAll('[data-go]').forEach(button => button.onclick = () => show(Number(button.dataset.go)));
 document.addEventListener('keydown', event => {
   if (event.target.closest('select')) return;
-  if (event.key === 'ArrowRight') show(page + 1);
+  if (event.key === 'ArrowRight') {
+    if (!isPageComplete(page) && skip.hidden) return;
+    if (page === pages.length - 1) {
+      if (isPageComplete(page)) showEnding();
+      return;
+    }
+    show(page + 1);
+  }
   if (event.key === 'ArrowLeft') {
     const target = Math.max(0, page - 1);
     resetFrom(target);
@@ -143,16 +379,155 @@ document.getElementById('readBtn').onclick = () => {
   speechSynthesis.speak(speech);
 };
 
-document.querySelectorAll('.star').forEach(star => {
-  star.onclick = () => {
-    star.classList.add('on');
-    tone(620 + document.querySelectorAll('.star.on').length * 80, .15);
-    if (document.querySelectorAll('.star.on').length === 4) {
-      status.textContent = 'All the stars are shining!';
-      glowBurstStars(star, 22);
-    }
+const rocketCanvas = document.getElementById('rocketCanvas');
+const rocketCtx = rocketCanvas.getContext('2d', { alpha: true });
+const drawPad = document.getElementById('drawPad');
+const drawnShip = document.getElementById('drawnShip');
+const drawnShipImg = document.getElementById('drawnShipImg');
+const nightCue = document.getElementById('nightCue');
+let drawColor = '#fa5a45';
+let drawing = false;
+let hasInk = false;
+let shipSaved = false;
+let shipLit = false;
+let lastDrawX = 0;
+let lastDrawY = 0;
+let canvasScale = 1;
+
+function sizeRocketCanvas(force = false) {
+  if (shipSaved) return;
+  const rect = rocketCanvas.getBoundingClientRect();
+  if (rect.width < 2 || rect.height < 2) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const nextWidth = Math.round(rect.width * dpr);
+  const nextHeight = Math.round(rect.height * dpr);
+  if (rocketCanvas.width === nextWidth && rocketCanvas.height === nextHeight) {
+    drawnShip.style.setProperty('--ship-ratio', `${rect.width} / ${rect.height}`);
+    return;
+  }
+  if (hasInk && !force) return;
+  rocketCanvas.width = nextWidth;
+  rocketCanvas.height = nextHeight;
+  canvasScale = dpr;
+  rocketCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  rocketCtx.lineCap = 'round';
+  rocketCtx.lineJoin = 'round';
+  rocketCtx.imageSmoothingEnabled = true;
+  hasInk = false;
+  drawnShip.style.setProperty('--ship-ratio', `${rect.width} / ${rect.height}`);
+}
+
+function canvasPoint(event) {
+  const rect = rocketCanvas.getBoundingClientRect();
+  return {
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
+  };
+}
+
+function clearRocketCanvas() {
+  rocketCtx.setTransform(canvasScale, 0, 0, canvasScale, 0, 0);
+  rocketCtx.clearRect(0, 0, rocketCanvas.width / canvasScale, rocketCanvas.height / canvasScale);
+  hasInk = false;
+}
+
+function checkNightComplete(origin) {
+  const starsLit = document.querySelectorAll('.star.on').length;
+  if (starsLit === 4 && shipLit) {
+    status.textContent = 'Your rocket is glowing with the stars!';
+    glowBurstStars(origin, 22);
+    updateNav();
+  }
+}
+
+rocketCanvas.addEventListener('pointerdown', event => {
+  if (shipSaved) return;
+  event.preventDefault();
+  if (!hasInk) sizeRocketCanvas(true);
+  drawing = true;
+  hasInk = true;
+  const point = canvasPoint(event);
+  lastDrawX = point.x;
+  lastDrawY = point.y;
+  rocketCtx.strokeStyle = drawColor;
+  rocketCtx.fillStyle = drawColor;
+  rocketCtx.lineWidth = 7;
+  rocketCtx.lineCap = 'round';
+  rocketCtx.lineJoin = 'round';
+  rocketCtx.beginPath();
+  rocketCtx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
+  rocketCtx.fill();
+  rocketCanvas.setPointerCapture(event.pointerId);
+});
+
+rocketCanvas.addEventListener('pointermove', event => {
+  if (!drawing) return;
+  const point = canvasPoint(event);
+  rocketCtx.strokeStyle = drawColor;
+  rocketCtx.lineWidth = 7;
+  rocketCtx.beginPath();
+  rocketCtx.moveTo(lastDrawX, lastDrawY);
+  rocketCtx.lineTo(point.x, point.y);
+  rocketCtx.stroke();
+  lastDrawX = point.x;
+  lastDrawY = point.y;
+});
+
+const stopDrawing = () => { drawing = false; };
+rocketCanvas.addEventListener('pointerup', stopDrawing);
+rocketCanvas.addEventListener('pointercancel', stopDrawing);
+rocketCanvas.addEventListener('pointerleave', stopDrawing);
+
+document.querySelectorAll('.swatch').forEach(swatch => {
+  swatch.onclick = () => {
+    drawColor = swatch.dataset.color;
+    document.querySelectorAll('.swatch').forEach(item => item.classList.toggle('on', item === swatch));
   };
 });
+
+document.getElementById('clearDraw').onclick = () => {
+  if (shipSaved) return;
+  clearRocketCanvas();
+  tone(190, .08);
+};
+
+document.getElementById('saveDraw').onclick = () => {
+  if (shipSaved) return;
+  if (!hasInk) {
+    status.textContent = 'Draw a rocket first, then add it to the sky.';
+    tone(170, .1);
+    return;
+  }
+  const rect = rocketCanvas.getBoundingClientRect();
+  drawnShip.style.setProperty('--ship-ratio', `${rect.width} / ${rect.height}`);
+  drawnShipImg.src = rocketCanvas.toDataURL('image/png');
+  drawnShip.hidden = false;
+  drawPad.classList.add('saved');
+  shipSaved = true;
+  document.querySelectorAll('.star').forEach(star => { star.disabled = false; });
+  nightCue.textContent = 'Tap all four stars and your ship';
+  status.textContent = 'Your rocket is floating among the stars. Tap the stars and your ship!';
+  tone(540, .2);
+  confetti(10);
+};
+
+const nightPitches = [523, 622, 740, 880];
+document.querySelectorAll('.star').forEach((star, index) => {
+  star.onclick = () => {
+    if (!shipSaved || star.classList.contains('on')) return;
+    star.classList.add('on');
+    tone(nightPitches[index], .15);
+    checkNightComplete(star);
+  };
+});
+
+drawnShip.onclick = () => {
+  if (!shipSaved || shipLit) return;
+  shipLit = true;
+  drawnShip.classList.add('on');
+  tone(1047, .18);
+  checkNightComplete(drawnShip);
+};
 
 function pointInside(rect, x, y) {
   return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
@@ -196,12 +571,13 @@ document.querySelectorAll('.supply').forEach(item => {
       packed += 1;
       packedCount.textContent = `${packed}/4`;
       document.querySelector(`[data-find="${item.dataset.item}"]`).classList.add('found');
-      tone(300 + packed * 90, .12);
+      clatterThunk();
       if (packed === 4) {
         basket.classList.add('done');
         basket.querySelector('span').textContent = 'ALL PACKED!';
         status.textContent = 'All four supplies are packed!';
         confetti(12);
+        updateNav();
       }
     } else {
       item.style.transform = '';
@@ -230,6 +606,29 @@ function placeLockedPiece(piece, target) {
   piece.style.left = `${target.offsetLeft + (target.offsetWidth - piece.offsetWidth) / 2}px`;
   piece.style.top = `${target.offsetTop + (target.offsetHeight - piece.offsetHeight) / 2}px`;
   piece.style.transform = '';
+}
+
+function poofPieceIn(piece, target) {
+  const rect = target.getBoundingClientRect();
+  const colors = ['#ffd23f','#fa5a45','#438cff','#fff7df','#62ddb1'];
+  for (let i = 0; i < 10; i += 1) {
+    const puff = document.createElement('i');
+    const angle = (Math.PI * 2 * i) / 10;
+    const distance = 18 + Math.random() * 36;
+    puff.className = 'snap-poof';
+    puff.style.left = `${rect.left + rect.width / 2}px`;
+    puff.style.top = `${rect.top + rect.height / 2}px`;
+    puff.style.setProperty('--x', `${Math.cos(angle) * distance}px`);
+    puff.style.setProperty('--y', `${Math.sin(angle) * distance}px`);
+    puff.style.setProperty('--poof-color', colors[i % colors.length]);
+    document.body.appendChild(puff);
+    setTimeout(() => puff.remove(), 600);
+  }
+  piece.classList.add('locked');
+  placeLockedPiece(piece, target);
+  piece.style.animation = 'none';
+  void piece.offsetWidth;
+  piece.style.animation = '';
 }
 
 document.querySelectorAll('.puzzle-piece').forEach(piece => {
@@ -269,15 +668,15 @@ document.querySelectorAll('.puzzle-piece').forEach(piece => {
     piece.classList.remove('dragging');
     target.classList.remove('near');
     if (closeEnough) {
-      piece.classList.add('locked');
       target.classList.add('filled');
-      placeLockedPiece(piece, target);
+      poofPieceIn(piece, target);
       lockedPieces += 1;
-      tone(430 + lockedPieces * 90, .16);
+      hammerHit();
       status.textContent = `${lockedPieces} of 4 rocket parts locked in place.`;
       if (lockedPieces === 4) {
         document.querySelector('.dog-says').classList.add('show');
         status.textContent = 'The rocket puzzle is complete. The dog still has concerns.';
+        updateNav();
       }
     } else {
       piece.style.left = `${homeLeft}px`;
@@ -352,7 +751,7 @@ function launch() {
   makeFireballPoof();
   whoosh.classList.add('show');
   status.textContent = 'Liftoff!';
-  tone(760, .7);
+  launchBlast();
   setTimeout(() => { whoosh.classList.remove('show'); show(5); }, 2300);
 }
 launchBtn.addEventListener('pointerdown', startHold);
@@ -360,25 +759,66 @@ launchBtn.addEventListener('pointerdown', startHold);
 
 function grumbleSound() {
   try {
-    const Audio = window.AudioContext || window.webkitAudioContext;
-    const context = tone.context || (tone.context = new Audio());
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.type = 'sawtooth';
-    oscillator.frequency.setValueAtTime(95, context.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(42, context.currentTime + .75);
-    gain.gain.setValueAtTime(.001, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(.11, context.currentTime + .08);
-    gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + .8);
-    oscillator.connect(gain).connect(context.destination);
-    oscillator.start();
-    oscillator.stop(context.currentTime + .82);
+    const context = audioContext();
+    const play = () => {
+      const now = context.currentTime + .025;
+      const duration = 1.3;
+      const size = Math.floor(context.sampleRate * duration);
+      const buffer = context.createBuffer(1, size, context.sampleRate);
+      const samples = buffer.getChannelData(0);
+      let smoothNoise = 0;
+      for (let i = 0; i < size; i += 1) {
+        smoothNoise = smoothNoise * .972 + (Math.random() * 2 - 1) * .028;
+        samples[i] = smoothNoise;
+      }
+      const noise = context.createBufferSource();
+      const filter = context.createBiquadFilter();
+      const noiseGain = context.createGain();
+      noise.buffer = buffer;
+      filter.type = 'bandpass';
+      filter.frequency.value = 245;
+      filter.Q.value = .65;
+      noiseGain.gain.setValueAtTime(.001, now);
+      noiseGain.gain.linearRampToValueAtTime(.18, now + .14);
+      noiseGain.gain.linearRampToValueAtTime(.035, now + .5);
+      noiseGain.gain.linearRampToValueAtTime(.2, now + .79);
+      noiseGain.gain.exponentialRampToValueAtTime(.001, now + duration);
+      noise.connect(filter).connect(noiseGain).connect(context.destination);
+      noise.start(now);
+      noise.stop(now + duration);
+
+      const addStomachVoice = (type, frequencies, peak) => {
+        const voice = context.createOscillator();
+        const gain = context.createGain();
+        voice.type = type;
+        voice.frequency.setValueAtTime(frequencies[0], now);
+        voice.frequency.exponentialRampToValueAtTime(frequencies[1], now + .42);
+        voice.frequency.exponentialRampToValueAtTime(frequencies[2], now + .78);
+        voice.frequency.exponentialRampToValueAtTime(frequencies[3], now + duration);
+        gain.gain.setValueAtTime(.001, now);
+        gain.gain.linearRampToValueAtTime(peak, now + .12);
+        gain.gain.linearRampToValueAtTime(peak * .24, now + .5);
+        gain.gain.linearRampToValueAtTime(peak * .9, now + .78);
+        gain.gain.exponentialRampToValueAtTime(.001, now + duration);
+        voice.connect(gain).connect(context.destination);
+        voice.start(now);
+        voice.stop(now + duration);
+      };
+      addStomachVoice('sine', [96, 68, 112, 61], .17);
+      addStomachVoice('triangle', [192, 136, 224, 122], .055);
+    };
+    if (context.state === 'suspended') context.resume().then(play).catch(() => {});
+    else play();
   } catch (error) {}
 }
 
+document.querySelectorAll('.dog, .mars-dog').forEach(dog => {
+  dog.addEventListener('click', () => barkSound());
+});
+
 const accuracyFill = document.getElementById('accuracyFill');
 const accuracyTrack = accuracyFill.parentElement;
-const accuracyHint = document.getElementById('accuracyHint');
+const accuracyGame = accuracyTrack.parentElement;
 let accuracy = 0;
 let accuracyDirection = 1;
 let accuracyTime = performance.now();
@@ -398,7 +838,6 @@ requestAnimationFrame(animateAccuracy);
 document.getElementById('johnnyButton').onclick = () => {
   if (marsSuccess) return;
   if (accuracy < .88) {
-    accuracyHint.textContent = 'Too soon — wait for GO!';
     accuracyTrack.classList.remove('miss');
     requestAnimationFrame(() => accuracyTrack.classList.add('miss'));
     tone(170, .12);
@@ -406,15 +845,30 @@ document.getElementById('johnnyButton').onclick = () => {
   }
   marsSuccess = true;
   document.getElementById('grumble').classList.add('show');
-  accuracyHint.textContent = 'Perfect! Johnny’s tummy rumbles.';
-  next.disabled = false;
+  accuracyGame.classList.add('complete');
   status.textContent = 'Perfect timing! Johnny’s hungry tummy is grumbling. Select Next to finish the story.';
   grumbleSound();
+  updateNav();
 };
 
 function resetPage(index) {
   if (index === 1) {
-    document.querySelectorAll('.star').forEach(star => star.classList.remove('on'));
+    drawing = false;
+    hasInk = false;
+    shipSaved = false;
+    shipLit = false;
+    drawPad.classList.remove('saved');
+    drawnShip.hidden = true;
+    drawnShip.classList.remove('on');
+    drawnShipImg.removeAttribute('src');
+    nightCue.textContent = 'Draw a rocket, then add it to the sky';
+    document.querySelectorAll('.star').forEach(star => {
+      star.classList.remove('on');
+      star.disabled = true;
+    });
+    document.querySelectorAll('.swatch').forEach((swatch, i) => swatch.classList.toggle('on', i === 0));
+    drawColor = '#fa5a45';
+    requestAnimationFrame(() => sizeRocketCanvas(true));
   }
   if (index === 2) {
     packed = 0;
@@ -449,8 +903,8 @@ function resetPage(index) {
   }
   if (index === 5) {
     marsSuccess = false;
-    accuracyHint.textContent = 'Tap Johnny when the bar reaches GO';
     accuracyTrack.classList.remove('miss');
+    accuracyGame.classList.remove('complete');
     document.getElementById('grumble').classList.remove('show');
     const ending = document.getElementById('ending');
     ending.classList.remove('show');
