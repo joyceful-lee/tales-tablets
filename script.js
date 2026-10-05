@@ -844,6 +844,7 @@ document.getElementById('johnnyButton').onclick = () => {
     return;
   }
   marsSuccess = true;
+  document.getElementById('johnnyButton').classList.add('rumbling');
   document.getElementById('grumble').classList.add('show');
   accuracyGame.classList.add('complete');
   status.textContent = 'Perfect timing! Johnny’s hungry tummy is grumbling. Select Next to finish the story.';
@@ -903,6 +904,7 @@ function resetPage(index) {
   }
   if (index === 5) {
     marsSuccess = false;
+    document.getElementById('johnnyButton').classList.remove('rumbling');
     accuracyTrack.classList.remove('miss');
     accuracyGame.classList.remove('complete');
     document.getElementById('grumble').classList.remove('show');

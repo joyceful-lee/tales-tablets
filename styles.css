@@ -204,6 +204,7 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .johnny-button { width:108px; height:155px; padding:0; border:0; background:transparent; cursor:pointer; transition:.2s; }
 .johnny-button:hover { transform:translateY(-4px); }
 .johnny-button svg { width:100%; height:100%; }
+.johnny-button.rumbling { animation:tummy-rumble .16s ease-in-out 8 alternate; transform-origin:50% 68%; }
 .grumble { display:none!important; }
 .grumble::after { content:""; position:absolute; left:34%; bottom:-14px; width:13px; height:13px; border:3px solid var(--ink); border-radius:50%; background:white; }
 .grumble.show { opacity:1; transform:scale(1) rotate(-3deg); }
@@ -249,6 +250,11 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
   25% { transform:rotate(-25deg); }
   50% { transform:rotate(18deg); }
   75% { transform:rotate(-14deg); }
+}
+@keyframes tummy-rumble {
+  0% { transform:translate(-2px,1px) rotate(-1.2deg) scaleX(.985); }
+  50% { transform:translate(2px,-1px) rotate(1.2deg) scaleX(1.02); }
+  100% { transform:translate(-1px,0) rotate(-.6deg) scaleX(.99); }
 }
 @keyframes pulse { 70% { box-shadow:0 0 0 12px rgba(250,90,69,0); } }
 @keyframes float { 50% { transform:translateY(-10px) rotate(4deg); } }
