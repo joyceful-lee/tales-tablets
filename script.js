@@ -30,7 +30,10 @@ function updateNav() {
   }
 }
 
-pages.forEach((_, index) => {
+pages.forEach((section, index) => {
+  // Each story card opens with its page number and name.
+  const card = section.querySelector('.story-copy');
+  if (card) card.insertAdjacentHTML('afterbegin', `<p class="page-label">Page ${index} · ${pageLabels[index]}</p>`);
   const option = document.createElement('option');
   option.value = index;
   option.textContent = pageLabels[index];
@@ -269,15 +272,19 @@ function show(index) {
   if (autoRead) readingTimer = setTimeout(readPage, 550);
 }
 
+// Sideways phones leave very little height, so the verse may shrink further there to keep the cue visible.
+const shortLandscape = window.matchMedia('(max-height: 620px) and (orientation: landscape)');
+
 function fitStoryCards() {
+  const minSize = shortLandscape.matches ? 12.5 : 16;
   document.querySelectorAll('.story-copy').forEach(card => {
     const verse = card.querySelector('.verse');
     verse.style.fontSize = '';
     if (card.scrollHeight <= card.clientHeight) return;
     let verseSize = parseFloat(getComputedStyle(verse).fontSize);
     let attempts = 0;
-    while (card.scrollHeight > card.clientHeight && attempts < 18) {
-      verseSize = Math.max(11.5, verseSize - .55);
+    while (card.scrollHeight > card.clientHeight && verseSize > minSize && attempts < 24) {
+      verseSize = Math.max(minSize, verseSize - .5);
       verse.style.fontSize = `${verseSize}px`;
       attempts += 1;
     }
@@ -611,7 +618,7 @@ document.getElementById('saveDraw').onclick = () => {
   setRocketArt(croppedDrawing());
   document.querySelectorAll('.star').forEach(star => { star.disabled = false; });
   nightCue.textContent = 'Tap all four stars and your ship';
-  announce({ text: nightCue.textContent, el: nightCue });
+  announce({ text: nightCue.textContent, el: nightCue.closest('.cue') });
   status.textContent = 'Your rocket is floating among the stars. Tap the stars and your ship!';
   tone(540, .2);
   confetti(10);
@@ -759,6 +766,7 @@ document.querySelectorAll('.supply').forEach(item => {
 const puzzleZone = document.getElementById('puzzleZone');
 const rocketBody = puzzleZone.querySelector('.rocket-body');
 let lockedPieces = 0;
+const partsCount = document.getElementById('partsCount');
 
 function distanceBetween(elementA, elementB) {
   const a = elementA.getBoundingClientRect();
@@ -810,8 +818,9 @@ document.querySelectorAll('.puzzle-piece').forEach(piece => {
     event.preventDefault();
     const zoneRect = puzzleZone.getBoundingClientRect();
     const pieceRect = piece.getBoundingClientRect();
-    homeLeft = pieceRect.left - zoneRect.left;
-    homeTop = pieceRect.top - zoneRect.top;
+    // Positions are measured from inside the scene frame's border.
+    homeLeft = pieceRect.left - zoneRect.left - puzzleZone.clientLeft;
+    homeTop = pieceRect.top - zoneRect.top - puzzleZone.clientTop;
     piece.style.left = `${homeLeft}px`;
     piece.style.top = `${homeTop}px`;
     piece.style.right = 'auto';
@@ -838,6 +847,7 @@ document.querySelectorAll('.puzzle-piece').forEach(piece => {
       target.classList.add('filled');
       poofPieceIn(piece, target);
       lockedPieces += 1;
+      partsCount.textContent = `${lockedPieces}/4`;
       hammerHit();
       status.textContent = `${lockedPieces} of 4 rocket parts locked in place.`;
       if (lockedPieces === 4) {
@@ -1052,6 +1062,7 @@ function resetPage(index) {
   }
   if (index === 3) {
     lockedPieces = 0;
+    partsCount.textContent = '0/4';
     document.querySelectorAll('.puzzle-piece').forEach(piece => {
       puzzleZone.appendChild(piece);
       piece.classList.remove('locked','dragging','returning');
