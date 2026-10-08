@@ -250,7 +250,7 @@ function launchBlast() {
 
 function show(index) {
   index = Math.max(0, Math.min(pages.length - 1, index));
-  window.speechSynthesis?.cancel();
+  stopReading();
   pages[page].classList.remove('active');
   page = index;
   pages[page].classList.add('active');
@@ -264,6 +264,9 @@ function show(index) {
     fitStoryCards();
     if (page === 1) sizeRocketCanvas();
   });
+  scheduleSupplyHint();
+  // Let the page slide in (and its chime play) before reading.
+  if (autoRead) readingTimer = setTimeout(readPage, 550);
 }
 
 function fitStoryCards() {
@@ -363,31 +366,121 @@ function bestVoice(kind) {
     })[0];
 }
 
-// Read the verse exactly as it appears on the page; pages without a verse (the cover) use data-read.
-function pageReadText(section) {
-  const lines = [...section.querySelectorAll('.verse span')].map(line => line.textContent.trim());
-  if (!lines.length) return section.dataset.read || '';
-  // Add a short pause between lines that don't already end in punctuation.
-  return lines.map(line => /[.,!?;:…—”"’]$/.test(line) ? line : `${line},`).join(' ');
+const readBtn = document.getElementById('readBtn');
+const autoReadBtn = document.getElementById('autoReadBtn');
+let autoRead = false;
+let readingId = 0;
+let readingTimer;
+
+// Wrap each verse word in its own span so it can be highlighted while it is spoken.
+document.querySelectorAll('.verse > span').forEach(line => {
+  line.innerHTML = line.textContent.trim().split(/\s+/).map(word => `<span class="word">${word}</span>`).join(' ');
+});
+
+// Read the verse exactly as it appears on the page, remembering where each word starts in the spoken text.
+function verseReading(section) {
+  const lines = [...section.querySelectorAll('.verse > span')];
+  if (!lines.length) return { text: section.dataset.read || '' };
+  let text = '';
+  const words = [];
+  lines.forEach(line => {
+    const lineWords = [...line.querySelectorAll('.word')];
+    lineWords.forEach((word, i) => {
+      if (text) text += ' ';
+      words.push({ start: text.length, el: word });
+      text += word.textContent;
+      // Add a short pause after lines that don't already end in punctuation.
+      if (i === lineWords.length - 1 && !/[.,!?;:…—”"’]$/.test(word.textContent)) text += ',';
+    });
+  });
+  return { text, words };
 }
 
-document.getElementById('readBtn').onclick = () => {
+function clearHighlight() {
+  document.querySelectorAll('.reading').forEach(el => el.classList.remove('reading'));
+}
+
+function highlightWord(words, charIndex) {
+  let current = words[0];
+  for (const word of words) {
+    if (word.start > charIndex) break;
+    current = word;
+  }
+  if (current.el.classList.contains('reading')) return;
+  clearHighlight();
+  current.el.classList.add('reading');
+}
+
+function stopReading() {
+  readingId += 1;
+  clearTimeout(readingTimer);
+  window.speechSynthesis?.cancel();
+  clearHighlight();
+  readBtn.classList.remove('speaking');
+}
+
+// Speak each part in turn: { text, words } highlights word by word, { text, el } highlights the whole element.
+function speakParts(parts) {
+  stopReading();
   if (!('speechSynthesis' in window)) {
     status.textContent = 'Read aloud is not available in this browser.';
     return;
   }
-  if (speechSynthesis.speaking) {
-    speechSynthesis.cancel();
-    return;
-  }
-  const speech = new SpeechSynthesisUtterance(pageReadText(pages[page]));
+  const id = readingId;
   const kind = voiceChoice.value;
-  speech.voice = bestVoice(kind) || null;
-  speech.lang = speech.voice?.lang || 'en-US';
-  speech.rate = .96;
-  speech.pitch = kind === 'man' ? .98 : 1.01;
-  speech.volume = 1;
-  speechSynthesis.speak(speech);
+  const voice = bestVoice(kind) || null;
+  const queue = parts.filter(part => part.text);
+  readBtn.classList.add('speaking');
+  queue.forEach((part, index) => {
+    const speech = new SpeechSynthesisUtterance(part.text);
+    speech.voice = voice;
+    speech.lang = voice?.lang || 'en-US';
+    speech.rate = .96;
+    speech.pitch = kind === 'man' ? .98 : 1.01;
+    speech.volume = 1;
+    speech.onstart = () => {
+      if (id !== readingId) return;
+      clearHighlight();
+      part.el?.classList.add('reading');
+    };
+    speech.onboundary = event => {
+      if (id !== readingId || !part.words || event.name !== 'word') return;
+      highlightWord(part.words, event.charIndex);
+    };
+    speech.onend = speech.onerror = () => {
+      if (id !== readingId) return;
+      clearHighlight();
+      if (index === queue.length - 1) readBtn.classList.remove('speaking');
+    };
+    speechSynthesis.speak(speech);
+  });
+}
+
+function cuePart(section) {
+  const cue = section.querySelector('.cue');
+  return cue ? { text: cue.textContent.trim(), el: cue } : {};
+}
+
+function readPage() {
+  speakParts([verseReading(pages[page]), cuePart(pages[page])]);
+}
+
+// In read-to-me mode, speak a new instruction as soon as it appears.
+function announce(part) {
+  if (autoRead) speakParts([part]);
+}
+
+readBtn.onclick = () => {
+  if (readBtn.classList.contains('speaking')) stopReading();
+  else readPage();
+};
+
+autoReadBtn.onclick = () => {
+  autoRead = !autoRead;
+  autoReadBtn.setAttribute('aria-pressed', autoRead);
+  status.textContent = autoRead ? 'Read to me is on.' : 'Read to me is off.';
+  if (autoRead) readPage();
+  else stopReading();
 };
 
 const rocketCanvas = document.getElementById('rocketCanvas');
@@ -515,12 +608,52 @@ document.getElementById('saveDraw').onclick = () => {
   drawnShip.hidden = false;
   drawPad.classList.add('saved');
   shipSaved = true;
+  setRocketArt(croppedDrawing());
   document.querySelectorAll('.star').forEach(star => { star.disabled = false; });
   nightCue.textContent = 'Tap all four stars and your ship';
+  announce({ text: nightCue.textContent, el: nightCue });
   status.textContent = 'Your rocket is floating among the stars. Tap the stars and your ship!';
   tone(540, .2);
   confetti(10);
 };
+
+// Trim the drawing to the inked area so it fills the rocket's space on later pages.
+function croppedDrawing() {
+  const { width, height } = rocketCanvas;
+  const alpha = rocketCtx.getImageData(0, 0, width, height).data;
+  let left = width;
+  let top = height;
+  let right = -1;
+  let bottom = -1;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (alpha[(y * width + x) * 4 + 3] < 8) continue;
+      if (x < left) left = x;
+      if (x > right) right = x;
+      if (y < top) top = y;
+      if (y > bottom) bottom = y;
+    }
+  }
+  if (right < 0) return rocketCanvas.toDataURL('image/png');
+  const pad = Math.round(4 * canvasScale);
+  left = Math.max(0, left - pad);
+  top = Math.max(0, top - pad);
+  const cropWidth = Math.min(width, right + pad + 1) - left;
+  const cropHeight = Math.min(height, bottom + pad + 1) - top;
+  const crop = document.createElement('canvas');
+  crop.width = cropWidth;
+  crop.height = cropHeight;
+  crop.getContext('2d').drawImage(rocketCanvas, left, top, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+  return crop.toDataURL('image/png');
+}
+
+// Fly the child's drawing on the launch, whoosh and Mars pages; no drawing keeps the standard rocket.
+function setRocketArt(url) {
+  const image = document.getElementById('kidRocketImage');
+  if (url) image.setAttribute('href', url);
+  else image.removeAttribute('href');
+  document.querySelectorAll('.rocket-art use').forEach(use => use.setAttribute('href', url ? '#icon-kid-rocket' : '#icon-rocket'));
+}
 
 const nightPitches = [523, 622, 740, 880];
 document.querySelectorAll('.star').forEach((star, index) => {
@@ -547,6 +680,27 @@ function pointInside(rect, x, y) {
 let packed = 0;
 const basket = document.getElementById('basket');
 const packedCount = document.getElementById('packedCount');
+const hintDelay = 10000;
+let hintTimer;
+
+function clearSupplyHint() {
+  clearTimeout(hintTimer);
+  document.querySelectorAll('.hint').forEach(el => el.classList.remove('hint'));
+}
+
+// After a quiet stretch on the find-the-parts page, wiggle the next item still to be found.
+function scheduleSupplyHint() {
+  clearSupplyHint();
+  if (page !== 2 || packed === 4) return;
+  hintTimer = setTimeout(() => {
+    const item = document.querySelector('.supply:not(.packed)');
+    if (!item) return;
+    item.classList.add('hint');
+    document.querySelector(`[data-find="${item.dataset.item}"]`).classList.add('hint');
+    announce({ text: `Can you find the ${item.dataset.item.toLowerCase()}?` });
+  }, hintDelay);
+}
+
 document.querySelectorAll('.supply').forEach(item => {
   let originX = 0;
   let originY = 0;
@@ -554,6 +708,7 @@ document.querySelectorAll('.supply').forEach(item => {
   item.addEventListener('pointerdown', event => {
     if (item.classList.contains('packed')) return;
     event.preventDefault();
+    clearSupplyHint();
     originX = event.clientX;
     originY = event.clientY;
     item.classList.add('dragging');
@@ -594,6 +749,7 @@ document.querySelectorAll('.supply').forEach(item => {
       item.style.transform = '';
       tone(190, .08);
     }
+    scheduleSupplyHint();
   };
 
   item.addEventListener('pointerup', finishSupplyDrag);
@@ -873,6 +1029,7 @@ function resetPage(index) {
     drawnShip.hidden = true;
     drawnShip.classList.remove('on');
     drawnShipImg.removeAttribute('src');
+    setRocketArt(null);
     nightCue.textContent = 'Draw a rocket, then add it to the sky';
     document.querySelectorAll('.star').forEach(star => {
       star.classList.remove('on');
@@ -934,6 +1091,7 @@ function showEnding() {
   ending.classList.add('show');
   glowEndingStars(48);
   tone(540, .4);
+  announce({ text: `${ending.querySelector('h2').textContent} ${ending.querySelector('p').innerText.replace(/\s+/g, ' ')}` });
 }
 
 document.getElementById('againBtn').onclick = () => {
