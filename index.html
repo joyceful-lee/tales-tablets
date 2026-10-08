@@ -35,7 +35,7 @@
         <div class="cover-copy"><p class="eyebrow">A PARKER &amp; PINE STORY</p><h1>Johnny Builds<br>to Mars</h1><button class="cover-rocket-button" data-go="1" aria-label="Start the story"><svg class="cover-rocket" aria-hidden="true"><use href="#icon-rocket"></use></svg></button></div>
       </section>
 
-      <section class="page night" data-read="One wink from Mars in the velvety blue made Johnny shout, I can visit you! He sketched a ship by the moon's silver light. A rocket by breakfast? That sounds about right.">
+      <section class="page night">
         <div class="night-sparkles" id="nightSparkles" aria-hidden="true"></div>
         <div class="moon page-moon" aria-hidden="true"></div>
         <article class="story-copy"><div class="verse"><span>One wink from Mars in the velvety blue</span><span>made Johnny shout, “I can visit you!”</span><span>He sketched a ship by the moon’s silver light.</span><span>“A rocket by breakfast? That sounds about right.”</span></div><p class="cue" id="nightCue">Draw a rocket, then add it to the sky</p></article>
@@ -62,7 +62,7 @@
         </div>
       </section>
 
-      <section class="page supplies" data-read="He hunted the house from the den to the stair, for tape, wheels and pillows and one kitchen chair. A colander helmet, a box, and some string. If it rattled or rolled, it could probably fling.">
+      <section class="page supplies">
         <article class="story-copy"><div class="verse"><span>He hunted the house from the den to the stair</span><span>for tape, wheels, and pillows—and one kitchen chair.</span><span>A colander helmet, a box, and some string…</span><span>If it rattled or rolled, it could probably fling!</span></div><p class="cue">Find each hidden item, then drag it to the crate</p></article>
         <div class="playzone hidden-room" id="supplyZone">
           <div class="window-detail" aria-hidden="true"></div>
@@ -77,7 +77,7 @@
         </div>
       </section>
 
-      <section class="page garage" data-read="He taped up the tail and he bolted the nose. The dog raised one eyebrow, as doubtful dogs do. Four wings, asked the dog. Johnny yelled, maybe two!">
+      <section class="page garage">
         <article class="story-copy"><div class="verse"><span>He taped up the tail and he bolted the nose.</span><span>The dog raised one eyebrow and wiggled his toes.</span><span>“Four wings?” asked the dog. “That seems quite a few.”</span><span>Johnny grinned, “You’re right—so I’ll only use two!”</span></div><p class="cue">Drag each part near its matching outline</p></article>
         <div class="playzone workshop" id="puzzleZone">
           <div class="rocket-body" aria-label="Unfinished rocket"><svg viewBox="0 0 180 280"><path d="M48 72h84v160H48z" fill="#fffdf6" stroke="#17203f" stroke-width="7"/><circle cx="90" cy="128" r="25" fill="#438cff" stroke="#17203f" stroke-width="7"/><path d="M68 210h44v35H68z" fill="#ffd23f" stroke="#17203f" stroke-width="7"/></svg><div class="snap-target nose-target" data-slot="nose"></div><div class="snap-target left-fin-target" data-slot="left-fin"></div><div class="snap-target right-fin-target" data-slot="right-fin"></div><div class="snap-target flame-target" data-slot="flame"></div></div>
@@ -90,13 +90,13 @@
         </div>
       </section>
 
-      <section class="page launch" data-read="With goggles on tight and a howl from the hound, Johnny pressed go with a thunderous sound. The garage gave a rattle, the flowerpots flew. The rocket yelled whee and the dog hollered too.">
+      <section class="page launch">
         <div class="launch-sparkles page-sparkles" id="launchPageSparkles" aria-hidden="true"></div>
         <article class="story-copy"><div class="verse"><span>With goggles on tight and a howl from the hound,</span><span>Johnny pressed GO with a thunderous sound.</span><span>The garage gave a rattle. The flowerpots flew!</span><span>The rocket yelled “WHEEE!”—and the dog hollered too.</span></div><p class="cue">Press and hold for liftoff</p></article>
         <div class="playzone launch-zone"><div class="launch-sparkles" id="launchSparkles" aria-hidden="true"></div><svg class="launch-rocket" id="launchRocket" aria-hidden="true"><use href="#icon-rocket"></use></svg><button class="launch-btn" id="launchBtn"><span>GO</span></button></div>
       </section>
 
-      <section class="page mars" data-read="They bumped onto Mars with a bounce and a thud. Red dust on their elbows, red dust in the mud. Johnny opened his lunchbox, then started to stare. He packed half the garage, but no snacks were in there.">
+      <section class="page mars">
         <div class="mars-sparkles page-sparkles" id="marsSparkles" aria-hidden="true"></div>
         <svg class="mars-craters" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="crater-rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffad82"/><stop offset=".32" stop-color="#e46c50"/><stop offset=".64" stop-color="#a83f35"/><stop offset="1" stop-color="#6f2926"/></linearGradient><radialGradient id="crater-floor" cx="38%" cy="27%" r="74%"><stop offset="0" stop-color="#a94337"/><stop offset=".48" stop-color="#73302b"/><stop offset=".78" stop-color="#4d2222"/><stop offset="1" stop-color="#321719"/></radialGradient><radialGradient id="crater-ejecta"><stop offset="0" stop-color="#d75d47" stop-opacity=".18"/><stop offset=".58" stop-color="#ee7658" stop-opacity=".08"/><stop offset="1" stop-color="#ee7658" stop-opacity="0"/></radialGradient><filter id="crater-shadow" x="-30%" y="-40%" width="160%" height="190%"><feGaussianBlur stdDeviation="4"/></filter><filter id="crater-rugged" x="-20%" y="-30%" width="140%" height="160%"><feTurbulence type="fractalNoise" baseFrequency=".025 .07" numOctaves="2" seed="8" result="rough"/><feDisplacementMap in="SourceGraphic" in2="rough" scale="2.6" xChannelSelector="R" yChannelSelector="G"/></filter><g id="crater-shape"><path d="M-73-5C-61-34-27-49 4-46C39-44 68-26 76 4C66 31 38 52 3 53C-34 52-66 34-73-5Z" fill="url(#crater-ejecta)"/><path d="M-52 10C-49-12-29-29 1-31C31-33 52-17 55 4C58 26 34 40 3 40C-29 40-55 30-52 10Z" fill="#c85140" opacity=".26" filter="url(#crater-shadow)"/><g filter="url(#crater-rugged)"><path d="M-53 0C-49-22-27-36 2-36C32-36 54-20 55 2C56 24 32 38 1 37C-31 37-56 23-53 0ZM-35 0C-34 14-17 23 2 23C22 23 38 14 37 1C36-12 21-21 1-21C-18-21-34-12-35 0Z" fill="url(#crater-rim)" fill-rule="evenodd"/><path d="M-35 0C-34-12-18-21 1-21C21-21 36-12 37 1C38 14 22 23 2 23C-17 23-34 14-35 0Z" fill="url(#crater-floor)"/><path d="M-32-3C-26-13-12-18 3-18C19-18 31-12 35-3C25-8 14-10 2-10C-11-10-23-8-32-3Z" fill="#1f1013" opacity=".72"/><path d="M-34 1C-30 13-15 20 2 20C20 20 33 13 37 3C37 17 21 27 2 27C-18 27-34 17-34 1Z" fill="#9b4034" opacity=".52"/><path d="M-46-5C-38-23-18-31 3-31C25-31 43-21 49-6C37-16 21-22 2-22C-17-22-34-16-46-5Z" fill="#ffc09a" opacity=".68"/></g></g></defs><use href="#crater-shape" transform="translate(430 460) scale(.9) rotate(3)"/><use href="#crater-shape" transform="translate(805 492) scale(1.25) rotate(-4)"/><use href="#crater-shape" transform="translate(475 530) scale(.78) rotate(6)"/><use href="#crater-shape" transform="translate(910 552) scale(.55) rotate(-8)"/></svg>
         <article class="story-copy"><div class="verse"><span>They bumped onto Mars with a bounce and a thud—</span><span>red dust on their elbows, red dust in the mud.</span><span>Johnny opened his lunchbox, then started to stare:</span><span>He packed half the garage…</span><span>but no snacks were in there!</span></div><p class="cue">Tap Johnny only when the meter reaches GO</p></article>

@@ -349,15 +349,26 @@ function bestVoice(kind) {
   const womanNames = ['aria','jenny','michelle','sonia','natasha','libby','maisie','samantha','zira','ava','susan','karen','serena','moira','veena','female'];
   const manNames = ['guy','davis','tony','jason','christopher','eric','roger','stefan','ryan','thomas','william','mark','daniel','david','george','alex','aaron','fred','male'];
   const wanted = kind === 'man' ? manNames : womanNames;
+  const unwanted = kind === 'man' ? womanNames : manNames;
+  // Whole-word matches only, so "male" doesn't match "female".
+  const hasWord = (name, words) => words.some(word => new RegExp(`\\b${word}\\b`).test(name));
   return [...availableVoices]
     .filter(voice => /^en([-_]|$)/i.test(voice.lang))
     .sort((a, b) => {
       const score = voice => {
         const name = `${voice.name} ${voice.voiceURI}`.toLowerCase();
-        return wanted.some(word => name.includes(word)) * 5 + naturalWords.some(word => name.includes(word)) * 4 + !voice.localService * 2 + /en-us/i.test(voice.lang);
+        return hasWord(name, wanted) * 5 - hasWord(name, unwanted) * 5 + naturalWords.some(word => name.includes(word)) * 4 + !voice.localService * 2 + /en-us/i.test(voice.lang);
       };
       return score(b) - score(a);
     })[0];
+}
+
+// Read the verse exactly as it appears on the page; pages without a verse (the cover) use data-read.
+function pageReadText(section) {
+  const lines = [...section.querySelectorAll('.verse span')].map(line => line.textContent.trim());
+  if (!lines.length) return section.dataset.read || '';
+  // Add a short pause between lines that don't already end in punctuation.
+  return lines.map(line => /[.,!?;:…—”"’]$/.test(line) ? line : `${line},`).join(' ');
 }
 
 document.getElementById('readBtn').onclick = () => {
@@ -369,7 +380,7 @@ document.getElementById('readBtn').onclick = () => {
     speechSynthesis.cancel();
     return;
   }
-  const speech = new SpeechSynthesisUtterance(pages[page].dataset.read);
+  const speech = new SpeechSynthesisUtterance(pageReadText(pages[page]));
   const kind = voiceChoice.value;
   speech.voice = bestVoice(kind) || null;
   speech.lang = speech.voice?.lang || 'en-US';
