@@ -1196,3 +1196,5 @@ glowSceneStars(document.getElementById('nightSparkles'), 34);
 glowSceneStars(document.getElementById('launchPageSparkles'), 42, 66);
 glowSceneStars(document.getElementById('marsSparkles'), 38, 58);
 show(0);
+// The story font is wider than the fallback, so re-fit the verses once it has loaded.
+document.fonts?.ready.then(fitStoryCards);

@@ -1,17 +1,22 @@
+@font-face { font-family:"Gorditas"; src:url(fonts/gorditas-700.woff2) format("woff2"); font-weight:700; font-display:swap; }
+@font-face { font-family:"Coustard"; src:url(fonts/coustard-400.woff2) format("woff2"); font-weight:400; font-display:swap; }
+@font-face { font-family:"Zen Maru Gothic"; src:url(fonts/zen-maru-gothic-700.woff2) format("woff2"); font-weight:700; font-display:swap; }
+@font-face { font-family:"Zen Maru Gothic"; src:url(fonts/zen-maru-gothic-900.woff2) format("woff2"); font-weight:800 900; font-display:swap; }
 :root {
+  --font-display:"Gorditas",Georgia,serif; --font-story:"Coustard",Georgia,serif; --font-ui:"Zen Maru Gothic","Trebuchet MS",Arial,sans-serif;
   --navy:#182452; --ink:#17203f; --cream:#fff7df; --yellow:#ffd23f;
   --red:#fa5a45; --blue:#438cff; --mint:#62ddb1; --paper:#fffdf6;
 }
 * { box-sizing:border-box; }
 html,body { margin:0; min-height:100%; overflow:hidden; }
-body { background:var(--navy); color:var(--ink); font-family:"Trebuchet MS","Arial Rounded MT Bold",Arial,sans-serif; }
+body { background:var(--navy); color:var(--ink); font-family:var(--font-ui); font-weight:700; }
 button { font:inherit; }
 button:focus-visible { outline:4px solid white; outline-offset:4px; }
 .svg-defs { position:absolute; width:0; height:0; overflow:hidden; }
 .app { height:100svh; display:grid; grid-template-rows:64px 1fr 80px; }
 .topbar { display:flex; align-items:center; justify-content:space-between; padding:9px clamp(14px,3vw,34px); background:var(--navy); color:white; z-index:10; }
 .brand { border:0; background:none; color:white; display:flex; align-items:center; gap:10px; font-weight:900; cursor:pointer; }
-.brand-mark { display:grid; place-items:center; width:40px; height:40px; border-radius:50% 50% 45% 45%; background:var(--yellow); color:var(--navy); font-family:Georgia,serif; transform:rotate(-4deg); }
+.brand-mark { display:grid; place-items:center; width:40px; height:40px; border-radius:50% 50% 45% 45%; background:var(--yellow); color:var(--navy); font-family:var(--font-display); transform:rotate(-4deg); }
 .tools { display:flex; align-items:center; gap:12px; font-weight:900; }
 .page-select { min-height:36px; max-width:150px; border:2px solid rgba(255,255,255,.8); border-radius:12px; padding:0 28px 0 10px; background:#26376f; color:white; font-family:inherit; font-size:.86rem; font-weight:800; cursor:pointer; }
 .voice-picker { display:flex; align-items:center; gap:7px; font-size:.78rem; letter-spacing:.04em; }
@@ -29,7 +34,7 @@ button:focus-visible { outline:4px solid white; outline-offset:4px; }
 .page { position:absolute; inset:0; min-width:0; min-height:0; display:grid; grid-template-columns:minmax(280px,42%) minmax(0,1fr); align-items:center; gap:clamp(16px,3vw,48px); padding:clamp(14px,3vw,40px); opacity:0; transform:translateX(7%); pointer-events:none; transition:.45s ease; overflow:hidden; }
 .page.active { opacity:1; transform:none; pointer-events:auto; z-index:2; }
 .story-copy { position:relative; z-index:3; min-height:0; max-height:100%; overflow:hidden; display:flex; flex-direction:column; justify-content:center; padding:clamp(12px,2vw,24px); }
-.verse { display:flex; flex-direction:column; align-items:flex-start; gap:clamp(7px,1.3vh,15px); font:clamp(1.08rem,1.9vw,1.58rem)/1.22 Georgia,serif; }
+.verse { display:flex; flex-direction:column; align-items:flex-start; gap:clamp(7px,1.3vh,15px); font:clamp(1.08rem,1.9vw,1.58rem)/1.22 var(--font-story); }
 .verse > span { width:fit-content; max-width:100%; text-wrap:balance; }
 .verse > span:nth-child(1) { margin-left:1%; transform:rotate(-.45deg); }
 .verse > span:nth-child(2) { margin-left:7%; transform:rotate(.35deg); }
@@ -41,7 +46,7 @@ button:focus-visible { outline:4px solid white; outline-offset:4px; }
 .verse .word { border-radius:.25em; transition:background-color .12s,color .12s,box-shadow .12s; }
 .verse .word.reading,.cue.reading { background:var(--yellow); color:var(--ink); text-shadow:none; box-shadow:0 0 0 .12em var(--yellow); }
 .cue.reading { border-radius:999px; padding-right:.5em; }
-h1,h2 { font-family:Georgia,"Times New Roman",serif; line-height:.96; letter-spacing:-.04em; margin:0; }
+h1,h2 { font-family:var(--font-display); font-weight:700; line-height:1; letter-spacing:0; margin:0; }
 h1 { font-size:clamp(3.5rem,9vw,7.6rem); color:white; -webkit-text-stroke:2px #101a42; paint-order:stroke fill; text-shadow:0 7px 0 rgba(0,0,0,.25); }
 h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .cue { margin:clamp(13px,2vh,22px) 0 0 5%; display:flex; align-items:center; gap:9px; font-weight:900; }
@@ -240,7 +245,7 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .dot { width:13px; height:13px; padding:0; border:2px solid var(--navy); border-radius:50%; background:transparent; cursor:pointer; }
 .dot.active { width:30px; border-radius:10px; background:var(--red); }
 .whoosh,.ending { position:fixed; inset:0; z-index:40; display:grid; place-items:center; text-align:center; color:white; background:radial-gradient(circle,var(--red),var(--navy)); opacity:0; pointer-events:none; transform:scale(.7); transition:.4s; overflow:hidden; }
-.whoosh { font:900 clamp(4rem,15vw,10rem) Georgia,serif; }
+.whoosh { font:700 clamp(4rem,15vw,10rem) var(--font-display); }
 .whoosh span { position:relative; z-index:2; text-shadow:0 8px 0 rgba(0,0,0,.22); }
 .whoosh-rocket { position:absolute; z-index:3; left:-20%; bottom:34%; width:clamp(90px,15vw,190px); height:clamp(150px,26vw,310px); transform:rotate(90deg); }
 .whoosh.show .whoosh-rocket { animation:fly-across 2.2s cubic-bezier(.25,.75,.25,1) forwards; }
@@ -254,7 +259,7 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .ending>div { position:relative; z-index:3; }
 .end-star { position:absolute; z-index:1; border-radius:50%; background:var(--star-color); box-shadow:0 0 7px 2px var(--star-color),0 0 18px 5px color-mix(in srgb,var(--star-color) 55%,transparent); animation:end-twinkle var(--twinkle-time) ease-in-out infinite alternate; }
 .ending h2 { color:var(--yellow); font-size:clamp(3rem,9vw,6rem); }
-.ending p { font:clamp(1.2rem,3vw,1.8rem)/1.5 Georgia,serif; }
+.ending p { font:clamp(1.2rem,3vw,1.8rem)/1.5 var(--font-story); }
 .celebrate { position:fixed; z-index:60; width:18px; height:18px; border-radius:var(--round,3px); pointer-events:none; animation:confetti 1.4s forwards; }
 .sr-only { position:absolute!important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
