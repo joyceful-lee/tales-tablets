@@ -285,14 +285,26 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .dot.done { border-color:rgba(255,255,255,.75); background:rgba(255,255,255,.75); }
 .dot.active { width:30px; border-color:var(--yellow); background:var(--yellow); }
 .whoosh,.ending { position:fixed; inset:0; z-index:40; display:grid; place-items:center; text-align:center; color:white; background:radial-gradient(circle,var(--red),var(--navy)); opacity:0; pointer-events:none; transform:scale(.7); transition:.4s; overflow:hidden; }
-.whoosh { font:700 clamp(4rem,15vw,10rem) var(--font-display); }
-.whoosh span { position:relative; z-index:2; text-shadow:0 8px 0 rgba(0,0,0,.22); }
-.whoosh-rocket { position:absolute; z-index:3; left:-20%; bottom:34%; width:clamp(90px,15vw,190px); height:clamp(150px,26vw,310px); transform:rotate(90deg); }
+/* WHEEE!: the paper night sky rushes past while the rocket streaks across on a paper flame. */
+.whoosh { background:linear-gradient(#14245a,#2a3a78); }
+.whoosh-sky,.whoosh-streaks { position:absolute; inset:0; z-index:0; pointer-events:none; }
+.whoosh .paper-texture { z-index:1; }
+.whoosh-streaks i { position:absolute; left:100%; top:var(--top); width:var(--len); height:5px; border-radius:3px; background:rgba(255,246,228,.55); }
+.whoosh.show .whoosh-streaks i { animation:streak var(--speed) linear var(--delay) infinite; }
+.whoosh-cloud { position:absolute; z-index:1; left:100%; top:var(--top); width:var(--w); aspect-ratio:160/110; overflow:visible; }
+.whoosh.show .whoosh-cloud { animation:cloud-rush var(--speed) linear var(--delay) infinite; }
+.whoosh-word { position:relative; z-index:3; display:flex; font:700 clamp(4rem,15vw,10rem)/1 var(--font-display); }
+.whoosh-word i { font-style:normal; color:var(--yellow); text-shadow:3px 0 0 var(--paper),-3px 0 0 var(--paper),0 3px 0 var(--paper),0 -3px 0 var(--paper),3px 3px 0 var(--paper),-3px 3px 0 var(--paper),3px -3px 0 var(--paper),-3px -3px 0 var(--paper),0 10px 0 rgba(10,15,40,.35); }
+.whoosh.show .whoosh-word i { animation:letter-hop .5s cubic-bezier(.2,1.6,.4,1) calc(var(--n) * .07s) both; }
+.whoosh-word i:nth-child(odd) { rotate:-4deg; } .whoosh-word i:nth-child(even) { rotate:5deg; }
+.whoosh-rocket { --rocket-h:clamp(150px,26vw,310px); position:absolute; z-index:5; left:-20%; bottom:6%; width:clamp(90px,15vw,190px); height:var(--rocket-h); transform:rotate(90deg); overflow:visible; }
 .whoosh.show .whoosh-rocket { animation:fly-across 2.2s cubic-bezier(.25,.75,.25,1) forwards; }
-.flight-trail { position:absolute; z-index:2; left:-50%; bottom:calc(51% - 21px); width:38%; height:18px; border-radius:50%; background:linear-gradient(90deg,transparent,#ff7b38 62%,#ffd23f 84%,#fff); filter:blur(1px) drop-shadow(0 0 10px #ff9f1c); opacity:0; }
+/* The flame streamer runs along the rocket's centre line, which sits half a rocket above its bottom edge. */
+.flight-trail { position:absolute; z-index:4; left:-50%; bottom:calc(6% + clamp(150px,26vw,310px) / 2 - 26px); width:38%; height:52px; overflow:visible; opacity:0; }
 .whoosh.show .flight-trail { animation:trail-across 2.2s cubic-bezier(.25,.75,.25,1) forwards; }
-.fireball-poof { position:absolute; inset:0; z-index:1; pointer-events:none; }
-.fireball-poof i { position:absolute; left:50%; top:50%; width:var(--size); height:var(--size); margin:calc(var(--size) / -2); border-radius:50%; background:var(--fire); box-shadow:0 0 9px 3px var(--fire),0 0 24px 7px color-mix(in srgb,var(--fire) 55%,transparent); opacity:0; }
+/* The launch burst is paper confetti puffs. */
+.fireball-poof { position:absolute; inset:0; z-index:2; pointer-events:none; }
+.fireball-poof i { position:absolute; left:50%; top:50%; width:var(--size); height:var(--size); margin:calc(var(--size) / -2); border-radius:50%; background:var(--fire); box-shadow:0 3px 0 rgba(10,15,40,.25); opacity:0; }
 .whoosh.show .fireball-poof i { animation:fireball-pop 1.25s ease-out var(--delay) both; }
 .whoosh.show,.ending.show { opacity:1; pointer-events:auto; transform:scale(1); }
 /* The ending: a paper night sky, the rocket heading home from Mars to Earth, and the last verse on a taped card. */
@@ -341,7 +353,10 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 @keyframes dog-hop { 50% { transform:translateY(-16%); } }
 @keyframes trail-march { to { stroke-dashoffset:-44; } }
 @keyframes end-bob { 50% { transform:translateY(-8px); } }
-@keyframes fly-across { 0% { left:-20%; bottom:34%; transform:rotate(90deg) scale(.95); } 100% { left:108%; bottom:34%; transform:rotate(90deg) scale(.95); } }
+@keyframes streak { from { transform:translateX(0); } to { transform:translateX(calc(-100vw - 200px)); } }
+@keyframes cloud-rush { from { transform:translateX(0); } to { transform:translateX(calc(-100vw - 260px)); } }
+@keyframes letter-hop { from { opacity:0; transform:translateY(40%) scale(.4); } to { opacity:1; transform:none; } }
+@keyframes fly-across { 0% { left:-20%; transform:rotate(90deg) scale(.95); } 100% { left:108%; transform:rotate(90deg) scale(.95); } }
 @keyframes trail-across { 0% { left:-50%; opacity:0; } 12% { opacity:.95; } 100% { left:78%; opacity:0; } }
 @keyframes paper-twinkle { from { transform:scale(.82) rotate(-8deg); } to { transform:scale(1.08) rotate(6deg); } }
 @keyframes end-twinkle { from { opacity:.25; transform:scale(.55); } to { opacity:1; transform:scale(1.35); } }

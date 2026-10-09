@@ -1035,7 +1035,7 @@ function stopHold() {
 
 function makeFireballPoof() {
   const poof = document.getElementById('fireballPoof');
-  const colors = ['#ff3b30','#ff7b38','#ffd23f','#fff7df','#ffffff'];
+  const colors = ['#fa5a45','#ff7b38','#ffd23f','#fff6e4','#62ddb1'];
   poof.replaceChildren();
   for (let i = 0; i < 26; i += 1) {
     const ball = document.createElement('i');
@@ -1325,6 +1325,7 @@ glowCoverStars(44);
 glowSceneStars(document.getElementById('nightSparkles'), 34);
 glowCoverStars(36, document.getElementById('launchPageSparkles'), 62);
 glowCoverStars(30, document.getElementById('marsSparkles'), 50);
+glowCoverStars(34, document.getElementById('whooshSky'));
 show(0);
 // The story font is wider than the fallback, so re-fit the verses once it has loaded.
 document.fonts?.ready.then(fitStoryCards);
