@@ -10,7 +10,7 @@ let skipTimer;
 // The paper art "boils": its cut edges re-wobble a few times a second, like stop-motion.
 // Hold it still for people who prefer reduced motion.
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const paperNoise = document.getElementById('paperNoise');
+const paperNoise = document.querySelectorAll('.paper-noise');
 const boilSeeds = [4, 9, 14];
 let boilFrame = 0;
 let boilTimer;
@@ -19,7 +19,7 @@ function syncPaperBoil() {
   if (reducedMotion.matches || document.hidden) return;
   boilTimer = setInterval(() => {
     boilFrame = (boilFrame + 1) % boilSeeds.length;
-    paperNoise.setAttribute('seed', boilSeeds[boilFrame]);
+    paperNoise.forEach(noise => noise.setAttribute('seed', boilSeeds[boilFrame]));
   }, 300);
 }
 syncPaperBoil();
@@ -588,7 +588,7 @@ const drawPad = document.getElementById('drawPad');
 const drawnShip = document.getElementById('drawnShip');
 const drawnShipImg = document.getElementById('drawnShipImg');
 const nightCue = document.getElementById('nightCue');
-let drawColor = '#fa5a45';
+let drawColor = '#fffdf6';
 let drawing = false;
 let hasInk = false;
 let shipSaved = false;
@@ -604,10 +604,7 @@ function sizeRocketCanvas(force = false) {
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const nextWidth = Math.round(rect.width * dpr);
   const nextHeight = Math.round(rect.height * dpr);
-  if (rocketCanvas.width === nextWidth && rocketCanvas.height === nextHeight) {
-    drawnShip.style.setProperty('--ship-ratio', `${rect.width} / ${rect.height}`);
-    return;
-  }
+  if (rocketCanvas.width === nextWidth && rocketCanvas.height === nextHeight) return;
   if (hasInk && !force) return;
   rocketCanvas.width = nextWidth;
   rocketCanvas.height = nextHeight;
@@ -617,7 +614,6 @@ function sizeRocketCanvas(force = false) {
   rocketCtx.lineJoin = 'round';
   rocketCtx.imageSmoothingEnabled = true;
   hasInk = false;
-  drawnShip.style.setProperty('--ship-ratio', `${rect.width} / ${rect.height}`);
 }
 
 function canvasPoint(event) {
@@ -697,17 +693,17 @@ document.getElementById('clearDraw').onclick = () => {
 document.getElementById('saveDraw').onclick = () => {
   if (shipSaved) return;
   if (!hasInk) {
-    status.textContent = 'Draw a rocket first, then add it to the sky.';
+    status.textContent = 'Draw a rocket on the blueprint first, then add it to the sky.';
     tone(170, .1);
     return;
   }
-  const rect = rocketCanvas.getBoundingClientRect();
-  drawnShip.style.setProperty('--ship-ratio', `${rect.width} / ${rect.height}`);
-  drawnShipImg.src = rocketCanvas.toDataURL('image/png');
+  const drawn = croppedDrawing();
+  drawnShip.style.setProperty('--ship-ratio', `${drawn.box.width} / ${drawn.box.height}`);
+  drawnShipImg.src = drawn.url;
   drawnShip.hidden = false;
-  drawPad.classList.add('saved');
   shipSaved = true;
-  setRocketArt(croppedDrawing());
+  setRocketArt(drawn.url);
+  liftShipOffBlueprint(drawn.box);
   document.querySelectorAll('.star').forEach(star => { star.disabled = false; });
   nightCue.textContent = 'Tap all four stars and your ship';
   announce({ text: nightCue.textContent, el: nightCue.closest('.cue') });
@@ -715,6 +711,40 @@ document.getElementById('saveDraw').onclick = () => {
   tone(540, .2);
   confetti(10);
 };
+
+// Where the ship's picture actually sits inside its box (the image is contained, not stretched).
+function shipPictureRect() {
+  const rect = drawnShip.getBoundingClientRect();
+  const [w, h] = getComputedStyle(drawnShip).getPropertyValue('--ship-ratio').split('/').map(Number);
+  const scale = Math.min(rect.width / w, rect.height / h);
+  return { left: rect.left + (rect.width - w * scale) / 2, top: rect.top + (rect.height - h * scale) / 2, width: w * scale, height: h * scale };
+}
+
+// Peel the drawing off the blueprint and float it up to its place in the sky while the sheet slides away.
+function liftShipOffBlueprint(box) {
+  const canvasRect = rocketCanvas.getBoundingClientRect();
+  drawPad.classList.add('saved');
+  if (reducedMotion.matches || document.hidden || typeof drawnShip.animate !== 'function') return;
+  const to = shipPictureRect();
+  const from = { left: canvasRect.left + box.left, top: canvasRect.top + box.top, width: box.width, height: box.height };
+  const scale = from.width / to.width;
+  const dx = from.left - to.left;
+  const dy = from.top - to.top;
+  const lift = `translate(${dx}px, ${dy - 16}px) scale(${scale * 1.06}) rotate(-5deg)`;
+  // Scale around the picture's own corner so it starts exactly over the ink on the blueprint.
+  const shipRect = drawnShip.getBoundingClientRect();
+  const ox = to.left - shipRect.left;
+  const oy = to.top - shipRect.top;
+  const at = transform => ({ transformOrigin: `${ox}px ${oy}px`, transform });
+  drawnShip.classList.add('arriving');
+  rocketCanvas.style.visibility = 'hidden';
+  const flight = drawnShip.animate([
+    { ...at(`translate(${dx}px, ${dy}px) scale(${scale})`), filter: 'drop-shadow(0 0 0 rgba(0,0,0,0))' },
+    { ...at(lift), filter: 'drop-shadow(0 14px 8px rgba(0,0,0,.45))', offset: .28 },
+    { ...at('none'), filter: 'drop-shadow(0 7px 5px rgba(0,0,0,.4))' }
+  ], { duration: 1150, easing: 'cubic-bezier(.45,0,.2,1)' });
+  flight.finished.catch(() => {}).then(() => drawnShip.classList.remove('arriving'));
+}
 
 // Trim the drawing to the inked area so it fills the rocket's space on later pages.
 function croppedDrawing() {
@@ -733,8 +763,10 @@ function croppedDrawing() {
       if (y > bottom) bottom = y;
     }
   }
-  if (right < 0) return rocketCanvas.toDataURL('image/png');
-  const pad = Math.round(4 * canvasScale);
+  if (right < 0) {
+    left = 0; top = 0; right = width - 1; bottom = height - 1;
+  }
+  const pad = Math.round(6 * canvasScale);
   left = Math.max(0, left - pad);
   top = Math.max(0, top - pad);
   const cropWidth = Math.min(width, right + pad + 1) - left;
@@ -743,7 +775,10 @@ function croppedDrawing() {
   crop.width = cropWidth;
   crop.height = cropHeight;
   crop.getContext('2d').drawImage(rocketCanvas, left, top, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-  return crop.toDataURL('image/png');
+  return {
+    url: crop.toDataURL('image/png'),
+    box: { left: left / canvasScale, top: top / canvasScale, width: cropWidth / canvasScale, height: cropHeight / canvasScale }
+  };
 }
 
 // Fly the child's drawing on the launch, whoosh and Mars pages; no drawing keeps the standard rocket.
@@ -1131,14 +1166,17 @@ function resetPage(index) {
     drawnShip.hidden = true;
     drawnShip.classList.remove('on');
     drawnShipImg.removeAttribute('src');
+    drawnShip.getAnimations().filter(a => !(a instanceof CSSAnimation)).forEach(a => a.cancel());
+    rocketCanvas.style.visibility = '';
+    clearRocketCanvas();
     setRocketArt(null);
-    nightCue.textContent = 'Draw a rocket, then add it to the sky';
+    nightCue.textContent = 'Draw a rocket on the blueprint, then add it to the sky';
     document.querySelectorAll('.star').forEach(star => {
       star.classList.remove('on');
       star.disabled = true;
     });
     document.querySelectorAll('.swatch').forEach((swatch, i) => swatch.classList.toggle('on', i === 0));
-    drawColor = '#fa5a45';
+    drawColor = '#fffdf6';
     requestAnimationFrame(() => sizeRocketCanvas(true));
   }
   if (index === 2) {
