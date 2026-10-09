@@ -1,6 +1,5 @@
 const pages = [...document.querySelectorAll('.page')];
 const dots = document.getElementById('dots');
-const pageSelect = document.getElementById('pageSelect');
 const back = document.getElementById('backBtn');
 const next = document.getElementById('nextBtn');
 const skip = document.getElementById('skipBtn');
@@ -20,9 +19,18 @@ function isPageComplete(index) {
   return true;
 }
 
+let navPage = -1;
+
 function updateNav() {
   clearTimeout(skipTimer);
   const complete = isPageComplete(page);
+  // When the activity on this page is finished, give Next a short nudge so the child sees where to go.
+  if (next.disabled && complete && navPage === page) {
+    next.classList.remove('nudge');
+    void next.offsetWidth;
+    next.classList.add('nudge');
+  }
+  navPage = page;
   next.disabled = !complete;
   skip.hidden = true;
   if (!complete) {
@@ -34,10 +42,6 @@ pages.forEach((section, index) => {
   // Each story card opens with its page number and name.
   const card = section.querySelector('.story-copy');
   if (card) card.insertAdjacentHTML('afterbegin', `<p class="page-label">Page ${index} · ${pageLabels[index]}</p>`);
-  const option = document.createElement('option');
-  option.value = index;
-  option.textContent = pageLabels[index];
-  pageSelect.appendChild(option);
   const dot = document.createElement('button');
   dot.className = 'dot';
   dot.setAttribute('aria-label', `Go to ${pageLabels[index].toLowerCase()}`);
@@ -257,10 +261,14 @@ function show(index) {
   pages[page].classList.remove('active');
   page = index;
   pages[page].classList.add('active');
-  pageSelect.value = page;
   back.disabled = page === 0;
   updateNav();
-  [...dots.children].forEach((dot, i) => dot.classList.toggle('active', i === page));
+  [...dots.children].forEach((dot, i) => {
+    dot.classList.toggle('active', i === page);
+    dot.classList.toggle('done', i < page);
+    if (i === page) dot.setAttribute('aria-current', 'step');
+    else dot.removeAttribute('aria-current');
+  });
   status.textContent = pageLabels[page];
   tone(360 + page * 45);
   requestAnimationFrame(() => {
@@ -317,7 +325,6 @@ skip.onclick = () => {
   }
   show(page + 1);
 };
-pageSelect.onchange = () => navigateTo(Number(pageSelect.value));
 document.getElementById('homeBtn').onclick = () => { resetFrom(0); show(0); };
 document.querySelectorAll('[data-go]').forEach(button => button.onclick = () => show(Number(button.dataset.go)));
 document.addEventListener('keydown', event => {
@@ -1134,17 +1141,18 @@ function glowEndingStars(amount) {
 
 function glowCoverStars(amount) {
   const sky = document.getElementById('coverSparkles');
-  const colors = ['#5aa9ff','#9fd3ff','#ffd23f','#fff7c7','#ffffff'];
+  const colors = ['#ffe27a','#fff3bf','#ffd23f','#fffaf0'];
   for (let i = 0; i < amount; i += 1) {
-    const star = document.createElement('i');
-    const size = 2 + Math.random() * 5;
-    star.className = 'cover-star';
+    // A scattering of cut-paper stars among small paper dots.
+    const isStar = i % 3 === 0;
+    const star = isStar ? document.createElementNS('http://www.w3.org/2000/svg', 'svg') : document.createElement('i');
+    if (isStar) star.innerHTML = '<use href="#icon-star"></use>';
+    star.setAttribute('class', isStar ? 'cover-star' : 'cover-star dot');
     star.style.left = `${Math.random() * 100}%`;
     star.style.top = `${Math.random() * 100}%`;
-    star.style.width = `${size}px`;
-    star.style.height = `${size}px`;
+    star.style.setProperty('--size', `${isStar ? 10 + Math.random() * 12 : 3 + Math.random() * 3}px`);
     star.style.setProperty('--star-color', colors[Math.floor(Math.random() * colors.length)]);
-    star.style.setProperty('--twinkle-time', `${.8 + Math.random() * 2}s`);
+    star.style.setProperty('--twinkle-time', `${1.6 + Math.random() * 2.4}s`);
     star.style.animationDelay = `${Math.random() * 1.4}s`;
     sky.appendChild(star);
   }
