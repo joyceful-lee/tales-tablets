@@ -95,27 +95,44 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .drawn-ship { position:absolute; z-index:4; left:34%; bottom:9%; height:clamp(150px,42%,340px); width:auto; max-width:44%; aspect-ratio:var(--ship-ratio,1/2); padding:0; border:0; background:transparent; cursor:pointer; filter:drop-shadow(0 7px 5px rgba(0,0,0,.4)); animation:float 3.2s ease-in-out infinite; animation-delay:.6s; }
 .drawn-ship[hidden] { display:none; }
 .drawn-ship.arriving { z-index:9; }
-/* The drawing is cut out of the blueprint: a cream paper rim around every stroke. */
-.drawn-ship img { display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; filter:drop-shadow(3px 0 0 var(--paper)) drop-shadow(-3px 0 0 var(--paper)) drop-shadow(0 3px 0 var(--paper)) drop-shadow(0 -3px 0 var(--paper)); }
+.drawn-ship img { display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; }
 .drawn-ship.on { animation:pop .55s both; filter:drop-shadow(0 0 18px white); }
 .draw-pad { --bp:#1f5ca8; position:absolute; z-index:8; inset:5% 4% 4%; display:grid; grid-template-rows:auto minmax(0,1fr) auto; gap:var(--space-2); padding:var(--space-3) var(--space-4) var(--space-3); border-radius:3px; background:var(--bp); color:#eaf3ff; box-shadow:0 2px 0 #174a8a,0 16px 30px rgba(0,0,0,.4); rotate:-.6deg; transition:transform .55s cubic-bezier(.55,0,.75,.2),opacity .55s ease; }
 .draw-pad.saved { opacity:0; transform:translateY(55%) rotate(5deg); pointer-events:none; transition-delay:.18s; }
 .bp-tape { position:absolute; top:-12px; z-index:2; width:84px; height:26px; background:rgba(255,244,214,.78); box-shadow:0 1px 2px rgba(0,0,0,.2); clip-path:polygon(3% 0,97% 4%,100% 50%,96% 100%,2% 96%,0 45%); pointer-events:none; }
 .bp-tape.left { left:-14px; rotate:-24deg; } .bp-tape.right { right:-14px; rotate:21deg; }
-.bp-head { display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-3); margin:0; padding:0 var(--space-1); font-family:var(--font-story); font-size:.8rem; letter-spacing:.06em; }
+.bp-head { display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); margin:0; padding:0 var(--space-1); font-family:var(--font-story); font-size:.8rem; letter-spacing:.06em; }
 .bp-head b { font-family:var(--font-display); font-weight:700; font-size:1.15rem; letter-spacing:.14em; text-transform:uppercase; }
-.bp-head span { opacity:.8; }
+/* One tab per sheet: the part being drawn is filled in, and a finished part gets a tick. */
+.bp-sheets { display:flex; gap:var(--space-1); }
+.bp-sheet { display:flex; align-items:center; gap:5px; min-height:30px; padding:0 var(--space-3); border:2px solid rgba(234,243,255,.6); border-radius:999px; background:transparent; color:#eaf3ff; font-size:.78rem; font-weight:900; cursor:pointer; }
+.bp-sheet::before { content:""; width:12px; height:12px; border:2px solid currentColor; border-radius:50%; opacity:.7; }
+.bp-sheet.inked::before { border:0; opacity:1; background:var(--mint) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2 5.1 8.3 9 4' fill='none' stroke='%2317203f' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/100% no-repeat; width:14px; height:14px; }
+.bp-sheet.on { border-color:#eaf3ff; background:#eaf3ff; color:var(--bp); }
 .bp-board { position:relative; min-height:0; border:2px solid rgba(234,243,255,.75); outline:1px solid rgba(234,243,255,.4); outline-offset:3px; background-color:#2366b6; background-image:linear-gradient(rgba(234,243,255,.26) 1px,transparent 1px),linear-gradient(90deg,rgba(234,243,255,.26) 1px,transparent 1px),linear-gradient(rgba(234,243,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(234,243,255,.1) 1px,transparent 1px); background-size:60px 60px,60px 60px,12px 12px,12px 12px; background-position:center; }
-.bp-guide { position:absolute; inset:0; width:100%; height:100%; fill:none; stroke:rgba(234,243,255,.45); stroke-width:1.5; stroke-dasharray:10 6; pointer-events:none; }
+.bp-guide { position:absolute; inset:0; width:100%; height:100%; fill:none; stroke:rgba(234,243,255,.5); stroke-width:2; stroke-dasharray:10 6; pointer-events:none; }
+.bp-guide[hidden] { display:none; }
 #rocketCanvas { position:absolute; inset:0; width:100%; height:100%; background:transparent; cursor:crosshair; touch-action:none; }
+#rocketCanvas.filling { cursor:cell; }
 .bp-stamp { position:absolute; right:var(--space-2); bottom:var(--space-2); display:grid; grid-template-columns:auto auto; column-gap:var(--space-2); margin:0; padding:var(--space-1) var(--space-2); border:1.5px solid rgba(234,243,255,.7); background:var(--bp); font-family:var(--font-story); font-size:.62rem; letter-spacing:.06em; text-transform:uppercase; pointer-events:none; }
 .bp-stamp b { font-family:var(--font-display); font-weight:700; font-size:.85rem; letter-spacing:.04em; text-transform:none; }
 .bp-stamp span:last-child { grid-column:1 / -1; opacity:.75; }
-.draw-tools { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:var(--space-2); }
+.draw-tools { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:var(--space-2) var(--space-4); }
+.tool-group { display:flex; align-items:center; gap:var(--space-2); }
+/* Brush sizes are dots of the size they paint; the bucket fills a shape. */
+.tool { display:grid; place-items:center; width:34px; height:34px; padding:0; border:2px solid rgba(234,243,255,.6); border-radius:50%; background:transparent; color:#eaf3ff; cursor:pointer; }
+.tool i { width:var(--dot); height:var(--dot); border-radius:50%; background:currentColor; }
+.tool svg { width:20px; height:20px; }
+.tool.on { border-color:var(--ink); background:var(--yellow); color:var(--ink); box-shadow:0 3px 0 var(--ink); }
 .swatch { width:30px; height:30px; padding:0; border:3px solid #eaf3ff; border-radius:50%; background:var(--swatch); box-shadow:0 3px 0 rgba(0,0,0,.25); cursor:pointer; }
 .swatch.on { outline:3px solid var(--yellow); outline-offset:2px; }
+/* Twelve chalk colors sit in two rows of six. */
+.swatches { display:grid; grid-template-columns:repeat(6,auto); gap:6px; }
+.swatches .swatch { width:24px; height:24px; border-width:2px; box-shadow:0 2px 0 rgba(0,0,0,.25); }
 .draw-action { min-height:38px; border:2px solid #eaf3ff; border-radius:999px; padding:0 var(--space-4); background:transparent; color:#eaf3ff; font-size:.8rem; font-weight:900; cursor:pointer; }
-.draw-action:first-of-type { margin-left:var(--space-3); }
+.draw-action.icon { display:grid; place-items:center; width:38px; padding:0; }
+.draw-action.icon svg { width:20px; height:20px; }
+.draw-action:disabled { opacity:.4; cursor:default; }
 .draw-action.save { background:var(--yellow); color:var(--ink); border-color:var(--ink); box-shadow:0 3px 0 var(--ink); }
 .burst-star { position:fixed; z-index:60; width:var(--size); height:var(--size); border-radius:50%; background:var(--star-color); box-shadow:0 0 8px 3px var(--star-color),0 0 20px 5px var(--star-color); pointer-events:none; animation:star-burst 1s ease-out forwards; }
 /* The den is drawn on a fixed 600×480 stage that covers the scene, so items stay on their furniture at any size. */
@@ -179,6 +196,18 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .ghost { position:absolute; left:50%; top:50%; width:calc(var(--piece-w) - 6px); height:calc(var(--piece-w) * 1.12 - 6px); translate:-50% -50%; overflow:visible; fill:rgba(255,246,228,.35); stroke:rgba(23,32,63,.55); stroke-width:2.5; stroke-dasharray:6 5; stroke-linejoin:round; transition:fill .15s; }
 .snap-target.near .ghost { fill:rgba(98,221,177,.75); stroke:var(--navy); stroke-dasharray:none; }
 .snap-target.filled { opacity:0; }
+.kid-hull,.ghost-art,.puzzle-piece .kid-art { display:none; }
+/* Only the paper engine nozzle stays, tucked under the drawn body so the flame has something to attach to. */
+.kid-parts .rocket-hull > :not(:first-child) { display:none; }
+.kid-parts .kid-hull { position:absolute; z-index:2; display:block; }
+.kid-hull,.kid-parts .puzzle-piece .kid-art { filter:drop-shadow(2px 0 0 var(--paper)) drop-shadow(-2px 0 0 var(--paper)) drop-shadow(0 2px 0 var(--paper)) drop-shadow(0 -2px 0 var(--paper)) drop-shadow(1px 3px 2px rgba(11,10,30,.35)); }
+.kid-parts .snap-target:not(.flame-target) { border:2.5px dashed rgba(23,32,63,.55); border-radius:8px; background:rgba(255,246,228,.25); transition:background-color .15s; }
+.kid-parts .snap-target:not(.flame-target) .ghost { display:none; }
+.kid-parts .ghost-art { display:block; width:100%; height:100%; object-fit:fill; opacity:.35; }
+.kid-parts .snap-target.near:not(.flame-target) { border-style:solid; border-color:var(--navy); background:rgba(98,221,177,.6); }
+.kid-parts .puzzle-piece:not(.flame-piece) svg { display:none; }
+.kid-parts .puzzle-piece .kid-art { position:absolute; inset:5px; display:block; width:calc(100% - 10px); height:calc(100% - 10px); object-fit:contain; pointer-events:none; }
+.kid-parts .puzzle-piece.locked .kid-art { inset:0; width:100%; height:100%; object-fit:fill; }
 .dog { position:absolute; z-index:3; right:var(--space-5); bottom:calc(var(--tray-h) + var(--space-1)); width:var(--dog-w); height:var(--dog-h); padding:0; border:0; background:transparent; cursor:pointer; filter:drop-shadow(0 8px 0 rgba(0,0,0,.12)); }
 .dog svg,.mars-dog svg { display:block; width:100%; height:100%; pointer-events:none; }
 .dog-tail-use { transform-box:view-box; transform-origin:134px 184px; animation:dog-wag .62s ease-in-out infinite; }
@@ -320,6 +349,10 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .end-card { position:relative; z-index:3; width:min(560px,100%); padding:var(--space-6) var(--space-6) var(--space-5); border-radius:4px; background:var(--paper); color:var(--ink); box-shadow:0 3px 0 #e2d2ae,0 18px 34px rgba(5,10,30,.45); rotate:-1deg; }
 .end-card::before,.end-card::after { content:""; position:absolute; top:-12px; width:92px; height:26px; background:rgba(255,244,214,.85); box-shadow:0 1px 2px rgba(0,0,0,.18); }
 .end-card::before { left:-18px; rotate:-24deg; } .end-card::after { right:-18px; rotate:22deg; }
+.end-actions { display:flex; flex-wrap:wrap; justify-content:center; gap:var(--space-3) var(--space-4); }
+.secondary { border:3px solid var(--ink); border-radius:999px; background:var(--paper); color:var(--ink); padding:15px 26px; font-size:1.1rem; font-weight:900; box-shadow:0 7px 0 var(--ink); cursor:pointer; }
+.secondary:active { transform:translateY(5px); box-shadow:0 2px 0 var(--ink); }
+.secondary[hidden] { display:none; }
 .ending h2 { color:var(--red); font-size:clamp(2.8rem,8vw,5rem); }
 .ending p { margin:var(--space-4) 0 var(--space-5); font:clamp(1.1rem,2.6vw,1.6rem)/1.5 var(--font-story); }
 .celebrate { position:fixed; z-index:60; width:18px; height:18px; border-radius:var(--round,3px); pointer-events:none; animation:confetti 1.4s forwards; }
@@ -417,9 +450,15 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
   .bp-head { font-size:.68rem; } .bp-head b { font-size:.95rem; }
   .bp-stamp { display:none; }
   .draw-tools { gap:5px; }
-  .swatch { width:24px; height:24px; }
+  /* Phones: all twelve colors in one row on top, tools and buttons in the row below. */
+  .swatch,.swatches .swatch { width:20px; height:20px; }
+  .swatches { order:-1; flex-basis:100%; grid-template-columns:repeat(12,auto); justify-content:center; gap:4px; }
   .draw-action { min-height:32px; padding:0 10px; font-size:.68rem; }
-  .draw-action:first-of-type { margin-left:var(--space-1); }
+  .draw-action.icon { width:32px; }
+  .draw-tools { gap:5px var(--space-3); }
+  .tool-group { gap:5px; }
+  .tool { width:28px; height:28px; }
+  .bp-sheet { min-height:26px; padding:0 var(--space-2); font-size:.68rem; }
   .drawn-ship { left:30%; bottom:8%; height:clamp(130px,40%,240px); max-width:50%; }
   .grumble { left:2%; bottom:47%; padding:7px 9px; font-size:.65rem; }
   .bottom-nav { grid-template-columns:auto 1fr auto; padding:0 var(--space-3); }
@@ -436,6 +475,9 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
   .cue { font-size:.85rem; }
   .cue-icon { flex-basis:32px; height:32px; }
   .cue-icon svg { width:18px; height:18px; }
+  /* Short screens: the colors take one row on top and the tools and buttons share the row below, so the blueprint keeps its height. */
+  .swatches { order:-1; flex-basis:100%; grid-template-columns:repeat(12,auto); justify-content:center; gap:4px; }
+  .swatches .swatch { width:22px; height:22px; }
   /* Too short for a tray under the rocket: the tray becomes a 2×2 column on the left. */
   .workshop { --tray-h:0px; --rocket-lift:16px; --piece-w:58px; }
   .garage-tools { display:none; }
@@ -471,5 +513,10 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 @media(max-width:560px) {
   .brand span:last-child,.voice-picker>span { display:none; }
   .auto-read { padding:0 6px 0 4px; gap:4px; }
+}
+@media(max-width:380px) {
+  /* The part tabs need the whole header on the narrowest phones. */
+  .bp-head { justify-content:center; }
+  .bp-head>b { display:none; }
 }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; } }

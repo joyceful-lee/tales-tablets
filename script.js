@@ -300,7 +300,7 @@ function show(index, { afterFlight = false } = {}) {
   tone(360 + page * 45);
   requestAnimationFrame(() => {
     fitStoryCards();
-    if (page === 1) sizeRocketCanvas();
+    if (page === 1 && !shipSaved) loadSheet(sheetIndex);
   });
   scheduleSupplyHint();
   if (page === 0) requestAnimationFrame(() => flyCoverRocket('in'));
@@ -583,12 +583,17 @@ autoReadBtn.onclick = () => {
 };
 
 const rocketCanvas = document.getElementById('rocketCanvas');
-const rocketCtx = rocketCanvas.getContext('2d', { alpha: true });
+const rocketCtx = rocketCanvas.getContext('2d', { alpha: true, willReadFrequently: true });
 const drawPad = document.getElementById('drawPad');
 const drawnShip = document.getElementById('drawnShip');
 const drawnShipImg = document.getElementById('drawnShipImg');
 const nightCue = document.getElementById('nightCue');
+const saveDraw = document.getElementById('saveDraw');
+const undoDraw = document.getElementById('undoDraw');
+const bucketTool = document.getElementById('bucketTool');
 let drawColor = '#fffdf6';
+let brushSize = 9;
+let filling = false;
 let drawing = false;
 let hasInk = false;
 let shipSaved = false;
@@ -596,6 +601,30 @@ let shipLit = false;
 let lastDrawX = 0;
 let lastDrawY = 0;
 let canvasScale = 1;
+
+// The rocket is drawn one part per blueprint sheet. Each sheet keeps its own copy of the ink.
+const sheets = [
+  { name: 'body', cue: 'Draw the body of your rocket' },
+  { name: 'nose cone', cue: 'Draw the nose cone on top' },
+  { name: 'fin', cue: 'Draw a fin for the side' }
+].map(sheet => ({ ...sheet, canvas: document.createElement('canvas'), inked: false }));
+let sheetIndex = 0;
+let undoStack = [];
+const undoLimit = 6;
+const sheetTabs = [...document.querySelectorAll('.bp-sheet')];
+const sheetGuides = [...document.querySelectorAll('.bp-guide')];
+
+// Where each part sits on the rocket, in the garage rocket's 180 × 280 frame.
+// Every part is stretched to fill its box so the pieces always meet.
+const partBoxes = {
+  nose: { x: 54, y: 8, w: 72, h: 74 },
+  body: { x: 54, y: 76, w: 72, h: 164 },
+  leftFin: { x: 12, y: 154, w: 46, h: 86 },
+  rightFin: { x: 122, y: 154, w: 46, h: 86 }
+};
+const rocketFrame = { x: 8, y: 4, w: 164, h: 240 };
+const rocketKey = 'parker-pine-rocket-v1';
+let savedSheets = null;
 
 function sizeRocketCanvas(force = false) {
   if (shipSaved) return;
@@ -630,6 +659,158 @@ function clearRocketCanvas() {
   hasInk = false;
 }
 
+// Copy the blueprint into the current sheet after every change, so switching sheets or pages never loses ink.
+function stashSheet() {
+  const sheet = sheets[sheetIndex];
+  sheet.canvas.width = rocketCanvas.width;
+  sheet.canvas.height = rocketCanvas.height;
+  sheet.canvas.getContext('2d').drawImage(rocketCanvas, 0, 0);
+  sheet.inked = hasInk;
+  updateSheetUI();
+}
+
+function loadSheet(index) {
+  sheetIndex = index;
+  undoStack = [];
+  clearRocketCanvas();
+  sizeRocketCanvas(true);
+  const sheet = sheets[index];
+  if (sheet.inked) {
+    // A sheet drawn on another screen size keeps its shape, centered on the blueprint.
+    const fit = Math.min(rocketCanvas.width / sheet.canvas.width, rocketCanvas.height / sheet.canvas.height);
+    const width = sheet.canvas.width * fit;
+    const height = sheet.canvas.height * fit;
+    rocketCtx.setTransform(1, 0, 0, 1, 0, 0);
+    rocketCtx.drawImage(sheet.canvas, (rocketCanvas.width - width) / 2, (rocketCanvas.height - height) / 2, width, height);
+    rocketCtx.setTransform(canvasScale, 0, 0, canvasScale, 0, 0);
+    hasInk = true;
+  }
+  updateSheetUI();
+}
+
+function allSheetsInked() {
+  return sheets.every(sheet => sheet.inked);
+}
+
+function updateSheetUI() {
+  sheetTabs.forEach((tab, i) => {
+    tab.classList.toggle('on', i === sheetIndex);
+    tab.setAttribute('aria-pressed', i === sheetIndex);
+    tab.classList.toggle('inked', sheets[i].inked);
+  });
+  sheetGuides.forEach((guide, i) => guide.toggleAttribute('hidden', i !== sheetIndex));
+  document.getElementById('sheetLabel').textContent = `Sheet ${sheetIndex + 1} of ${sheets.length}`;
+  saveDraw.textContent = allSheetsInked() ? 'Add to sky' : 'Next part';
+  undoDraw.disabled = !undoStack.length;
+}
+
+function sheetCue() {
+  return allSheetsInked() ? 'Add your rocket to the sky' : sheets[sheetIndex].cue;
+}
+
+// Keep the instruction in step with the blueprint, and read it out when it changes.
+function refreshNightCue() {
+  const text = sheetCue();
+  if (nightCue.textContent === text) return;
+  nightCue.textContent = text;
+  if (page === 1) announce({ text, el: nightCue.closest('.cue') });
+}
+
+function selectSheet(index) {
+  if (shipSaved || index === sheetIndex) return;
+  stashSheet();
+  loadSheet(index);
+  refreshNightCue();
+  tone(440 + index * 60, .08);
+}
+
+sheetTabs.forEach((tab, i) => { tab.onclick = () => selectSheet(i); });
+
+function pushUndo() {
+  undoStack.push({ image: rocketCtx.getImageData(0, 0, rocketCanvas.width, rocketCanvas.height), inked: hasInk });
+  if (undoStack.length > undoLimit) undoStack.shift();
+  undoDraw.disabled = false;
+}
+
+undoDraw.onclick = () => {
+  if (shipSaved) return;
+  const step = undoStack.pop();
+  if (!step) return;
+  if (step.image.width === rocketCanvas.width && step.image.height === rocketCanvas.height) {
+    rocketCtx.putImageData(step.image, 0, 0);
+    hasInk = step.inked;
+  }
+  stashSheet();
+  refreshNightCue();
+  tone(240, .08);
+};
+
+function hexToRgb(hex) {
+  const value = parseInt(hex.slice(1), 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+// Paint bucket: fill the patch of similar color under the finger, then grow the fill by a pixel
+// so it tucks under the soft edges of the chalk lines.
+function floodFill(x, y) {
+  const { width, height } = rocketCanvas;
+  const startX = Math.floor(x * canvasScale);
+  const startY = Math.floor(y * canvasScale);
+  if (startX < 0 || startY < 0 || startX >= width || startY >= height) return false;
+  const image = rocketCtx.getImageData(0, 0, width, height);
+  const data = image.data;
+  const [fillR, fillG, fillB] = hexToRgb(drawColor);
+  const start = (startY * width + startX) * 4;
+  const seedA = data[start + 3];
+  if (seedA > 250 && data[start] === fillR && data[start + 1] === fillG && data[start + 2] === fillB) return false;
+  // Colors are compared premultiplied, so the faint edge of a line counts as empty space.
+  const seed = [data[start] * seedA / 255, data[start + 1] * seedA / 255, data[start + 2] * seedA / 255, seedA];
+  const tolerance = 90;
+  const matches = pixel => {
+    const i = pixel * 4;
+    const a = data[i + 3];
+    return Math.abs(data[i] * a / 255 - seed[0]) + Math.abs(data[i + 1] * a / 255 - seed[1]) + Math.abs(data[i + 2] * a / 255 - seed[2]) + Math.abs(a - seed[3]) <= tolerance;
+  };
+  const region = new Uint8Array(width * height);
+  const stack = [startY * width + startX];
+  region[stack[0]] = 1;
+  while (stack.length) {
+    const pixel = stack.pop();
+    const px = pixel % width;
+    const neighbors = [px > 0 ? pixel - 1 : -1, px < width - 1 ? pixel + 1 : -1, pixel - width, pixel + width];
+    for (const n of neighbors) {
+      if (n < 0 || n >= region.length || region[n] || !matches(n)) continue;
+      region[n] = 1;
+      stack.push(n);
+    }
+  }
+  const grow = Math.max(1, Math.round(canvasScale));
+  const filled = new Uint8Array(region);
+  for (let py = 0; py < height; py += 1) {
+    for (let px = 0; px < width; px += 1) {
+      if (!region[py * width + px]) continue;
+      for (let dy = -grow; dy <= grow; dy += 1) {
+        const ny = py + dy;
+        if (ny < 0 || ny >= height) continue;
+        for (let dx = -grow; dx <= grow; dx += 1) {
+          const nx = px + dx;
+          if (nx >= 0 && nx < width) filled[ny * width + nx] = 1;
+        }
+      }
+    }
+  }
+  for (let pixel = 0; pixel < filled.length; pixel += 1) {
+    if (!filled[pixel]) continue;
+    const i = pixel * 4;
+    data[i] = fillR;
+    data[i + 1] = fillG;
+    data[i + 2] = fillB;
+    data[i + 3] = 255;
+  }
+  rocketCtx.putImageData(image, 0, 0);
+  return true;
+}
+
 function checkNightComplete(origin) {
   const starsLit = document.querySelectorAll('.star.on').length;
   if (starsLit === 4 && shipLit) {
@@ -643,18 +824,31 @@ rocketCanvas.addEventListener('pointerdown', event => {
   if (shipSaved) return;
   event.preventDefault();
   if (!hasInk) sizeRocketCanvas(true);
+  const point = canvasPoint(event);
+  pushUndo();
+  if (filling) {
+    if (floodFill(point.x, point.y)) {
+      hasInk = true;
+      stashSheet();
+      refreshNightCue();
+      tone(330, .12);
+    } else {
+      undoStack.pop();
+      updateSheetUI();
+    }
+    return;
+  }
   drawing = true;
   hasInk = true;
-  const point = canvasPoint(event);
   lastDrawX = point.x;
   lastDrawY = point.y;
   rocketCtx.strokeStyle = drawColor;
   rocketCtx.fillStyle = drawColor;
-  rocketCtx.lineWidth = 7;
+  rocketCtx.lineWidth = brushSize;
   rocketCtx.lineCap = 'round';
   rocketCtx.lineJoin = 'round';
   rocketCtx.beginPath();
-  rocketCtx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
+  rocketCtx.arc(point.x, point.y, brushSize / 2, 0, Math.PI * 2);
   rocketCtx.fill();
   rocketCanvas.setPointerCapture(event.pointerId);
 });
@@ -663,7 +857,7 @@ rocketCanvas.addEventListener('pointermove', event => {
   if (!drawing) return;
   const point = canvasPoint(event);
   rocketCtx.strokeStyle = drawColor;
-  rocketCtx.lineWidth = 7;
+  rocketCtx.lineWidth = brushSize;
   rocketCtx.beginPath();
   rocketCtx.moveTo(lastDrawX, lastDrawY);
   rocketCtx.lineTo(point.x, point.y);
@@ -672,7 +866,12 @@ rocketCanvas.addEventListener('pointermove', event => {
   lastDrawY = point.y;
 });
 
-const stopDrawing = () => { drawing = false; };
+const stopDrawing = () => {
+  if (!drawing) return;
+  drawing = false;
+  stashSheet();
+  refreshNightCue();
+};
 rocketCanvas.addEventListener('pointerup', stopDrawing);
 rocketCanvas.addEventListener('pointercancel', stopDrawing);
 rocketCanvas.addEventListener('pointerleave', stopDrawing);
@@ -684,26 +883,52 @@ document.querySelectorAll('.swatch').forEach(swatch => {
   };
 });
 
+function selectTool(button) {
+  filling = button === bucketTool;
+  if (!filling) brushSize = Number(button.dataset.size);
+  rocketCanvas.classList.toggle('filling', filling);
+  document.querySelectorAll('.tool').forEach(tool => {
+    tool.classList.toggle('on', tool === button);
+    tool.setAttribute('aria-pressed', tool === button);
+  });
+}
+document.querySelectorAll('.tool').forEach(tool => { tool.onclick = () => selectTool(tool); });
+
 document.getElementById('clearDraw').onclick = () => {
-  if (shipSaved) return;
+  if (shipSaved || !hasInk) return;
+  pushUndo();
   clearRocketCanvas();
+  stashSheet();
+  refreshNightCue();
   tone(190, .08);
 };
 
-document.getElementById('saveDraw').onclick = () => {
+saveDraw.onclick = () => {
   if (shipSaved) return;
   if (!hasInk) {
-    status.textContent = 'Draw a rocket on the blueprint first, then add it to the sky.';
+    status.textContent = `Draw the ${sheets[sheetIndex].name} on the blueprint first.`;
     tone(170, .1);
     return;
   }
-  const drawn = croppedDrawing();
-  drawnShip.style.setProperty('--ship-ratio', `${drawn.box.width} / ${drawn.box.height}`);
-  drawnShipImg.src = drawn.url;
+  stashSheet();
+  if (!allSheetsInked()) {
+    // Move on to the next part that still needs drawing.
+    const order = sheets.map((_, i) => (sheetIndex + 1 + i) % sheets.length);
+    loadSheet(order.find(i => !sheets[i].inked));
+    refreshNightCue();
+    tone(480 + sheetIndex * 60, .12);
+    return;
+  }
+  const rocket = buildRocket(sheets.map(sheet => sheet.canvas));
+  applyRocket(rocket);
+  saveRocket();
+  // The parts come together on the blueprint, then the finished rocket lifts off into the sky.
+  const box = showRocketOnBlueprint(rocket);
+  drawnShip.style.setProperty('--ship-ratio', `${rocketFrame.w} / ${rocketFrame.h}`);
+  drawnShipImg.src = rocket.rocket;
   drawnShip.hidden = false;
   shipSaved = true;
-  setRocketArt(drawn.url);
-  liftShipOffBlueprint(drawn.box);
+  liftShipOffBlueprint(box);
   document.querySelectorAll('.star').forEach(star => { star.disabled = false; });
   nightCue.textContent = 'Tap all four stars and your ship';
   announce({ text: nightCue.textContent, el: nightCue.closest('.cue') });
@@ -711,6 +936,18 @@ document.getElementById('saveDraw').onclick = () => {
   tone(540, .2);
   confetti(10);
 };
+
+function showRocketOnBlueprint(rocket) {
+  const width = rocketCanvas.width / canvasScale;
+  const height = rocketCanvas.height / canvasScale;
+  const scale = Math.min(width * .9 / rocketFrame.w, height * .9 / rocketFrame.h);
+  const box = { width: rocketFrame.w * scale, height: rocketFrame.h * scale };
+  box.left = (width - box.width) / 2;
+  box.top = (height - box.height) / 2;
+  clearRocketCanvas();
+  rocketCtx.drawImage(rocket.canvas, box.left, box.top, box.width, box.height);
+  return box;
+}
 
 // Where the ship's picture actually sits inside its box (the image is contained, not stretched).
 function shipPictureRect() {
@@ -746,10 +983,10 @@ function liftShipOffBlueprint(box) {
   flight.finished.catch(() => {}).then(() => drawnShip.classList.remove('arriving'));
 }
 
-// Trim the drawing to the inked area so it fills the rocket's space on later pages.
-function croppedDrawing() {
-  const { width, height } = rocketCanvas;
-  const alpha = rocketCtx.getImageData(0, 0, width, height).data;
+// Trim a sheet down to its ink.
+function cropToInk(source) {
+  const { width, height } = source;
+  const alpha = source.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, width, height).data;
   let left = width;
   let top = height;
   let right = -1;
@@ -766,27 +1003,197 @@ function croppedDrawing() {
   if (right < 0) {
     left = 0; top = 0; right = width - 1; bottom = height - 1;
   }
-  const pad = Math.round(6 * canvasScale);
-  left = Math.max(0, left - pad);
-  top = Math.max(0, top - pad);
-  const cropWidth = Math.min(width, right + pad + 1) - left;
-  const cropHeight = Math.min(height, bottom + pad + 1) - top;
   const crop = document.createElement('canvas');
-  crop.width = cropWidth;
-  crop.height = cropHeight;
-  crop.getContext('2d').drawImage(rocketCanvas, left, top, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+  crop.width = right - left + 1;
+  crop.height = bottom - top + 1;
+  crop.getContext('2d').drawImage(source, left, top, crop.width, crop.height, 0, 0, crop.width, crop.height);
+  return crop;
+}
+
+function mirrored(source) {
+  const flip = document.createElement('canvas');
+  flip.width = source.width;
+  flip.height = source.height;
+  const context = flip.getContext('2d');
+  context.translate(source.width, 0);
+  context.scale(-1, 1);
+  context.drawImage(source, 0, 0);
+  return flip;
+}
+
+// Put the three drawn parts together: the fin is copied for the other side, and the
+// whole rocket is cut out of cream paper like the rest of the book's art.
+function buildRocket(sheetCanvases) {
+  const [body, nose, fin] = sheetCanvases.map(cropToInk);
+  const rightFin = mirrored(fin);
+  const scale = 3;
+  const assembled = document.createElement('canvas');
+  assembled.width = rocketFrame.w * scale;
+  assembled.height = rocketFrame.h * scale;
+  const context = assembled.getContext('2d');
+  const place = (art, box) => context.drawImage(art, (box.x - rocketFrame.x) * scale, (box.y - rocketFrame.y) * scale, box.w * scale, box.h * scale);
+  place(body, partBoxes.body);
+  place(fin, partBoxes.leftFin);
+  place(rightFin, partBoxes.rightFin);
+  place(nose, partBoxes.nose);
+
+  const silhouette = document.createElement('canvas');
+  silhouette.width = assembled.width;
+  silhouette.height = assembled.height;
+  const silhouetteContext = silhouette.getContext('2d');
+  silhouetteContext.drawImage(assembled, 0, 0);
+  silhouetteContext.globalCompositeOperation = 'source-in';
+  silhouetteContext.fillStyle = '#fffdf6';
+  silhouetteContext.fillRect(0, 0, silhouette.width, silhouette.height);
+
+  const cutOut = document.createElement('canvas');
+  cutOut.width = assembled.width;
+  cutOut.height = assembled.height;
+  const cutContext = cutOut.getContext('2d');
+  const rim = 2.5 * scale;
+  for (let step = 0; step < 16; step += 1) {
+    const angle = (Math.PI * 2 * step) / 16;
+    cutContext.drawImage(silhouette, Math.cos(angle) * rim, Math.sin(angle) * rim);
+  }
+  cutContext.drawImage(assembled, 0, 0);
+
   return {
-    url: crop.toDataURL('image/png'),
-    box: { left: left / canvasScale, top: top / canvasScale, width: cropWidth / canvasScale, height: cropHeight / canvasScale }
+    canvas: cutOut,
+    rocket: cutOut.toDataURL('image/png'),
+    body: body.toDataURL('image/png'),
+    nose: nose.toDataURL('image/png'),
+    leftFin: fin.toDataURL('image/png'),
+    rightFin: rightFin.toDataURL('image/png')
   };
 }
 
-// Fly the child's drawing on the launch, whoosh and Mars pages; no drawing keeps the standard rocket.
+// Fly the child's rocket on the cover, launch, whoosh and Mars pages; no drawing keeps the standard rocket.
 function setRocketArt(url) {
   const image = document.getElementById('kidRocketImage');
   if (url) image.setAttribute('href', url);
   else image.removeAttribute('href');
   document.querySelectorAll('.rocket-art use').forEach(use => use.setAttribute('href', url ? '#icon-kid-rocket' : '#icon-rocket'));
+}
+
+const kidSlots = {
+  nose: { box: partBoxes.nose, art: 'nose', label: 'Drag your nose cone' },
+  'left-fin': { box: partBoxes.leftFin, art: 'leftFin', label: 'Drag your left fin' },
+  'right-fin': { box: partBoxes.rightFin, art: 'rightFin', label: 'Drag your right fin' }
+};
+const percentOf = (value, total) => `${(value / total) * 100}%`;
+
+function placeInFrame(element, box) {
+  element.style.left = percentOf(box.x, 180);
+  element.style.top = percentOf(box.y, 280);
+  element.style.width = percentOf(box.w, 180);
+  element.style.height = percentOf(box.h, 280);
+  element.style.right = 'auto';
+}
+
+// In the garage, the child's body waits on the bench and their own parts sit on the tray.
+function setGarageParts(rocket) {
+  const zone = document.getElementById('puzzleZone');
+  zone.classList.toggle('kid-parts', Boolean(rocket));
+  const hull = zone.querySelector('.kid-hull');
+  if (rocket) {
+    hull.src = rocket.body;
+    placeInFrame(hull, partBoxes.body);
+  } else {
+    hull.removeAttribute('src');
+  }
+  Object.entries(kidSlots).forEach(([slot, kid]) => {
+    const target = zone.querySelector(`.snap-target[data-slot="${slot}"]`);
+    const piece = document.querySelector(`.puzzle-piece[data-slot="${slot}"]`);
+    if (!piece.dataset.paperLabel) piece.dataset.paperLabel = piece.getAttribute('aria-label');
+    if (rocket) {
+      placeInFrame(target, kid.box);
+      target.querySelector('.ghost-art').src = rocket[kid.art];
+      piece.querySelector('.kid-art').src = rocket[kid.art];
+      piece.setAttribute('aria-label', kid.label);
+    } else {
+      target.removeAttribute('style');
+      target.querySelector('.ghost-art').removeAttribute('src');
+      piece.querySelector('.kid-art').removeAttribute('src');
+      piece.setAttribute('aria-label', piece.dataset.paperLabel);
+    }
+  });
+}
+
+function applyRocket(rocket) {
+  setRocketArt(rocket ? rocket.rocket : null);
+  setGarageParts(rocket);
+  document.getElementById('newRocketBtn').hidden = !rocket;
+}
+
+function copyCanvas(source) {
+  const copy = document.createElement('canvas');
+  copy.width = source.width;
+  copy.height = source.height;
+  copy.getContext('2d').drawImage(source, 0, 0);
+  return copy;
+}
+
+// The finished blueprint is kept in this browser, so the rocket is still there next time.
+function saveRocket() {
+  savedSheets = sheets.map(sheet => copyCanvas(sheet.canvas));
+  try {
+    localStorage.setItem(rocketKey, JSON.stringify({ sheets: savedSheets.map(canvas => canvas.toDataURL('image/png')) }));
+  } catch {
+    // Storage can be full or blocked; the rocket still flies for this visit.
+  }
+}
+
+function forgetRocket() {
+  savedSheets = null;
+  try { localStorage.removeItem(rocketKey); } catch { /* nothing saved to forget */ }
+  applyRocket(null);
+}
+
+// Put the saved blueprint back on the sheets, or blank sheets if there is none.
+function restoreSheets() {
+  sheets.forEach((sheet, i) => {
+    const saved = savedSheets?.[i];
+    sheet.canvas.width = saved ? saved.width : 1;
+    sheet.canvas.height = saved ? saved.height : 1;
+    if (saved) sheet.canvas.getContext('2d').drawImage(saved, 0, 0);
+    sheet.inked = Boolean(saved);
+  });
+  sheetIndex = 0;
+  undoStack = [];
+  updateSheetUI();
+}
+
+async function loadSavedRocket() {
+  let urls;
+  try {
+    urls = JSON.parse(localStorage.getItem(rocketKey) || 'null')?.sheets;
+  } catch {
+    return;
+  }
+  if (!Array.isArray(urls) || urls.length !== sheets.length) return;
+  try {
+    const images = await Promise.all(urls.map(url => new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = url;
+    })));
+    savedSheets = images.map(image => {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      canvas.getContext('2d').drawImage(image, 0, 0);
+      return canvas;
+    });
+  } catch {
+    return;
+  }
+  applyRocket(buildRocket(savedSheets));
+  // Leave alone a blueprint the child has already started on this visit.
+  if (shipSaved || sheets.some(sheet => sheet.inked)) return;
+  restoreSheets();
+  if (page === 1) loadSheet(0);
+  nightCue.textContent = sheetCue();
 }
 
 const nightPitches = [523, 622, 740, 880];
@@ -903,6 +1310,10 @@ function distanceBetween(elementA, elementB) {
 
 function placeLockedPiece(piece, target) {
   rocketBody.appendChild(piece);
+  if (puzzleZone.classList.contains('kid-parts') && kidSlots[piece.dataset.slot]) {
+    piece.style.width = `${target.offsetWidth}px`;
+    piece.style.height = `${target.offsetHeight}px`;
+  }
   piece.style.right = 'auto';
   piece.style.bottom = 'auto';
   piece.style.left = `${target.offsetLeft + (target.offsetWidth - piece.offsetWidth) / 2}px`;
@@ -1165,7 +1576,6 @@ document.getElementById('johnnyButton').onclick = () => {
 function resetPage(index) {
   if (index === 1) {
     drawing = false;
-    hasInk = false;
     shipSaved = false;
     shipLit = false;
     drawPad.classList.remove('saved');
@@ -1175,15 +1585,15 @@ function resetPage(index) {
     drawnShip.getAnimations().filter(a => !(a instanceof CSSAnimation)).forEach(a => a.cancel());
     rocketCanvas.style.visibility = '';
     clearRocketCanvas();
-    setRocketArt(null);
-    nightCue.textContent = 'Draw a rocket on the blueprint, then add it to the sky';
+    restoreSheets();
+    nightCue.textContent = sheetCue();
     document.querySelectorAll('.star').forEach(star => {
       star.classList.remove('on');
       star.disabled = true;
     });
     document.querySelectorAll('.swatch').forEach((swatch, i) => swatch.classList.toggle('on', i === 0));
     drawColor = '#fffdf6';
-    requestAnimationFrame(() => sizeRocketCanvas(true));
+    selectTool(document.querySelector('.tool.brush[data-size="9"]'));
   }
   if (index === 2) {
     packed = 0;
@@ -1243,6 +1653,13 @@ function showEnding() {
   tone(540, .4);
   announce({ text: `${ending.querySelector('h2').textContent} ${ending.querySelector('p').innerText.replace(/\s+/g, ' ')}` });
 }
+
+document.getElementById('newRocketBtn').onclick = () => {
+  document.getElementById('ending').classList.remove('show');
+  forgetRocket();
+  resetFrom(0);
+  show(1);
+};
 
 document.getElementById('againBtn').onclick = () => {
   const ending = document.getElementById('ending');
@@ -1326,6 +1743,7 @@ glowSceneStars(document.getElementById('nightSparkles'), 34);
 glowCoverStars(36, document.getElementById('launchPageSparkles'), 62);
 glowCoverStars(30, document.getElementById('marsSparkles'), 50);
 glowCoverStars(34, document.getElementById('whooshSky'));
+loadSavedRocket();
 show(0);
 // The story font is wider than the fallback, so re-fit the verses once it has loaded.
 document.fonts?.ready.then(fitStoryCards);
