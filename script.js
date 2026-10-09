@@ -274,8 +274,16 @@ function launchBlast() {
   } catch (error) {}
 }
 
-function show(index) {
+function show(index, { afterFlight = false } = {}) {
   index = Math.max(0, Math.min(pages.length - 1, index));
+  if (leavingCover && !afterFlight) return;
+  // Leaving the cover: the rocket finishes its arc into Mars before the page turns.
+  if (page === 0 && index > 0 && !afterFlight && coverFlightAllowed()) {
+    leavingCover = true;
+    flyCoverRocket('out').then(() => show(index, { afterFlight: true }));
+    return;
+  }
+  leavingCover = false;
   stopReading();
   pages[page].classList.remove('active');
   page = index;
@@ -295,12 +303,70 @@ function show(index) {
     if (page === 1) sizeRocketCanvas();
   });
   scheduleSupplyHint();
+  if (page === 0) requestAnimationFrame(() => flyCoverRocket('in'));
   // Let the page slide in (and its chime play) before reading.
   if (autoRead) readingTimer = setTimeout(readPage, 550);
 }
 
 // Sideways phones leave very little height, so the verse may shrink further there to keep the cue visible.
 const shortLandscape = window.matchMedia('(max-height: 620px) and (orientation: landscape)');
+
+// Cover rocket flight: one arc from Earth to Mars that passes through the rocket's resting spot.
+const coverRocket = document.querySelector('.cover-rocket');
+const coverRestAngle = 68;
+let leavingCover = false;
+
+function coverFlightAllowed() {
+  return !reducedMotion.matches && !document.hidden && typeof coverRocket.animate === 'function';
+}
+
+function coverFlightPath() {
+  coverRocket.getAnimations().forEach(animation => { if (animation instanceof CSSAnimation === false) animation.cancel(); });
+  const centre = el => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+  const earth = centre(document.querySelector('.cover-earth'));
+  const mars = centre(document.querySelector('.cover-mars'));
+  const rest = centre(coverRocket);
+  // Quadratic curve through the rest point at its midpoint.
+  const control = { x: 2 * rest.x - (earth.x + mars.x) / 2, y: 2 * rest.y - (earth.y + mars.y) / 2 };
+  const point = t => ({
+    x: (1 - t) ** 2 * earth.x + 2 * (1 - t) * t * control.x + t ** 2 * mars.x,
+    y: (1 - t) ** 2 * earth.y + 2 * (1 - t) * t * control.y + t ** 2 * mars.y
+  });
+  const heading = t => {
+    const dx = 2 * (1 - t) * (control.x - earth.x) + 2 * t * (mars.x - control.x);
+    const dy = 2 * (1 - t) * (control.y - earth.y) + 2 * t * (mars.y - control.y);
+    return Math.atan2(dy, dx) * 180 / Math.PI + 90;
+  };
+  return { rest, point, heading };
+}
+
+function flyCoverRocket(direction) {
+  if (!coverFlightAllowed()) return Promise.resolve();
+  const { rest, point, heading } = coverFlightPath();
+  const out = direction === 'out';
+  const [fromT, toT] = out ? [.5, .97] : [.04, .5];
+  const steps = 30;
+  const frames = [];
+  for (let i = 0; i <= steps; i += 1) {
+    const progress = i / steps;
+    const t = fromT + (toT - fromT) * progress;
+    const at = point(t);
+    // Ease the heading into (or out of) the rocket's resting tilt near the rest point.
+    const nearRest = out ? Math.max(0, 1 - progress / .25) : Math.max(0, (progress - .75) / .25);
+    const angle = heading(t) + (coverRestAngle - heading(t)) * nearRest;
+    const scale = out ? 1 - progress * .8 : .35 + progress * .65;
+    frames.push({
+      transform: `translate(${at.x - rest.x}px, ${at.y - rest.y}px) rotate(${angle}deg) scale(${scale})`,
+      opacity: out && progress > .85 ? 1 - (progress - .85) / .15 : 1
+    });
+  }
+  const flight = coverRocket.animate(frames, out
+    ? { duration: 1000, easing: 'cubic-bezier(.5,0,.85,.7)', fill: 'forwards' }
+    : { duration: 1700, easing: 'cubic-bezier(.2,.7,.3,1)' });
+  // The outbound flight stays parked at Mars; the next launch from Earth clears it.
+  // If the browser isn't running animations (a background tab), don't hold up the page turn.
+  return Promise.race([flight.finished.catch(() => {}), new Promise(resolve => setTimeout(resolve, 1200))]);
+}
 
 function fitStoryCards() {
   const minSize = shortLandscape.matches ? 12.5 : 16;

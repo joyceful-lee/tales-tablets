@@ -65,7 +65,7 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .paper-texture { position:absolute; inset:0; z-index:2; width:100%; height:100%; pointer-events:none; mix-blend-mode:soft-light; opacity:.45; }
 .cover-copy { position:relative; z-index:3; display:grid; justify-items:center; gap:17px; padding-bottom:clamp(92px,14vh,145px); }
 .eyebrow { margin:0; color:#fff0a6; font-weight:900; letter-spacing:.18em; }
-.cover-rocket-button { position:absolute; z-index:5; left:50%; bottom:clamp(-72px,-7vh,-32px); width:clamp(150px,19vw,240px); height:clamp(95px,13vw,155px); padding:0; border:0; background:transparent; cursor:pointer; filter:drop-shadow(0 10px 0 rgba(0,0,0,.2)); transform:translateX(-50%); transition:.2s; }
+.cover-rocket-button { position:absolute; z-index:5; left:50%; bottom:clamp(-72px,-7vh,-32px); width:clamp(180px,23vw,290px); height:clamp(114px,15.6vw,186px); padding:0; border:0; background:transparent; cursor:pointer; filter:drop-shadow(0 10px 0 rgba(0,0,0,.2)); transform:translateX(-50%); transition:.2s; }
 .cover-rocket-button:hover { transform:translateX(-46%) scale(1.05); }
 .cover-rocket-button:focus-visible { border-radius:50%; }
 .cover-rocket { width:100%; height:100%; transform:rotate(68deg); animation:rocket-hover 2.7s ease-in-out infinite; }
