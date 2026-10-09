@@ -295,11 +295,21 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .fireball-poof i { position:absolute; left:50%; top:50%; width:var(--size); height:var(--size); margin:calc(var(--size) / -2); border-radius:50%; background:var(--fire); box-shadow:0 0 9px 3px var(--fire),0 0 24px 7px color-mix(in srgb,var(--fire) 55%,transparent); opacity:0; }
 .whoosh.show .fireball-poof i { animation:fireball-pop 1.25s ease-out var(--delay) both; }
 .whoosh.show,.ending.show { opacity:1; pointer-events:auto; transform:scale(1); }
-.ending { z-index:50; background:radial-gradient(circle at 50% 50%,rgba(61,79,154,.55),transparent 36%),radial-gradient(circle at 16% 20%,#fff 0 1px,transparent 2px),radial-gradient(circle at 78% 72%,#8cc8ff 0 1.5px,transparent 2.5px),linear-gradient(145deg,#050a1d,#111f50); background-size:auto,130px 130px,190px 190px,auto; padding:25px; }
-.ending>div { position:relative; z-index:3; }
-.end-star { position:absolute; z-index:1; border-radius:50%; background:var(--star-color); box-shadow:0 0 7px 2px var(--star-color),0 0 18px 5px color-mix(in srgb,var(--star-color) 55%,transparent); animation:end-twinkle var(--twinkle-time) ease-in-out infinite alternate; }
-.ending h2 { color:var(--yellow); font-size:clamp(3rem,9vw,6rem); }
-.ending p { font:clamp(1.2rem,3vw,1.8rem)/1.5 var(--font-story); }
+/* The ending: a paper night sky, the rocket heading home from Mars to Earth, and the last verse on a taped card. */
+.ending { z-index:50; padding:var(--space-5); background:linear-gradient(#14245a,#2a3a78); }
+.end-sky { position:absolute; inset:0; z-index:0; pointer-events:none; }
+.ending .paper-texture { z-index:1; }
+.end-mars,.end-earth { position:absolute; z-index:1; aspect-ratio:1; overflow:visible; }
+.end-mars { left:7%; top:9%; width:clamp(84px,12vw,160px); }
+.end-earth { right:7%; bottom:8%; width:clamp(96px,14vw,180px); }
+.end-trail { position:absolute; inset:0; z-index:1; width:100%; height:100%; fill:none; stroke:rgba(255,246,228,.7); stroke-width:3; stroke-dasharray:12 10; stroke-linecap:round; vector-effect:non-scaling-stroke; }
+.end-trail path { vector-effect:non-scaling-stroke; animation:trail-march 1.2s linear infinite; }
+.end-rocket { position:absolute; z-index:2; width:clamp(54px,6.5vw,90px); aspect-ratio:140/230; overflow:visible; translate:-50% -50%; animation:end-bob 1.6s ease-in-out infinite; }
+.end-card { position:relative; z-index:3; width:min(560px,100%); padding:var(--space-6) var(--space-6) var(--space-5); border-radius:4px; background:var(--paper); color:var(--ink); box-shadow:0 3px 0 #e2d2ae,0 18px 34px rgba(5,10,30,.45); rotate:-1deg; }
+.end-card::before,.end-card::after { content:""; position:absolute; top:-12px; width:92px; height:26px; background:rgba(255,244,214,.85); box-shadow:0 1px 2px rgba(0,0,0,.18); }
+.end-card::before { left:-18px; rotate:-24deg; } .end-card::after { right:-18px; rotate:22deg; }
+.ending h2 { color:var(--red); font-size:clamp(2.8rem,8vw,5rem); }
+.ending p { margin:var(--space-4) 0 var(--space-5); font:clamp(1.1rem,2.6vw,1.6rem)/1.5 var(--font-story); }
 .celebrate { position:fixed; z-index:60; width:18px; height:18px; border-radius:var(--round,3px); pointer-events:none; animation:confetti 1.4s forwards; }
 .sr-only { position:absolute!important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 
@@ -329,6 +339,8 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 @keyframes puff-churn { from { transform:scale(.55); } to { transform:scale(.85); } }
 @keyframes pot-fly { 0% { transform:none; } 45% { transform:translate(calc(var(--fly-x) * .5),-260%) rotate(calc(var(--spin) * .5)); } 100% { transform:translate(var(--fly-x),-120%) rotate(var(--spin)); opacity:0; } }
 @keyframes dog-hop { 50% { transform:translateY(-16%); } }
+@keyframes trail-march { to { stroke-dashoffset:-44; } }
+@keyframes end-bob { 50% { transform:translateY(-8px); } }
 @keyframes fly-across { 0% { left:-20%; bottom:34%; transform:rotate(90deg) scale(.95); } 100% { left:108%; bottom:34%; transform:rotate(90deg) scale(.95); } }
 @keyframes trail-across { 0% { left:-50%; opacity:0; } 12% { opacity:.95; } 100% { left:78%; opacity:0; } }
 @keyframes paper-twinkle { from { transform:scale(.82) rotate(-8deg); } to { transform:scale(1.08) rotate(6deg); } }

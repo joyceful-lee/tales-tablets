@@ -1226,7 +1226,7 @@ function resetPage(index) {
     document.getElementById('grumble').classList.remove('show');
     const ending = document.getElementById('ending');
     ending.classList.remove('show');
-    ending.querySelectorAll('.end-star').forEach(star => star.remove());
+    document.getElementById('endSky').replaceChildren();
   }
 }
 
@@ -1237,7 +1237,9 @@ function resetFrom(index) {
 function showEnding() {
   const ending = document.getElementById('ending');
   ending.classList.add('show');
-  glowEndingStars(48);
+  const sky = document.getElementById('endSky');
+  sky.replaceChildren();
+  glowCoverStars(44, sky);
   tone(540, .4);
   announce({ text: `${ending.querySelector('h2').textContent} ${ending.querySelector('p').innerText.replace(/\s+/g, ' ')}` });
 }
@@ -1245,29 +1247,9 @@ function showEnding() {
 document.getElementById('againBtn').onclick = () => {
   const ending = document.getElementById('ending');
   ending.classList.remove('show');
-  ending.querySelectorAll('.end-star').forEach(star => star.remove());
   resetFrom(0);
   show(0);
 };
-
-function glowEndingStars(amount) {
-  const ending = document.getElementById('ending');
-  ending.querySelectorAll('.end-star').forEach(star => star.remove());
-  const colors = ['#5aa9ff','#86c9ff','#ffd23f','#fff7c7','#ffffff'];
-  for (let i = 0; i < amount; i += 1) {
-    const star = document.createElement('i');
-    const size = 3 + Math.random() * 7;
-    star.className = 'end-star';
-    star.style.left = `${Math.random() * 100}%`;
-    star.style.top = `${Math.random() * 100}%`;
-    star.style.width = `${size}px`;
-    star.style.height = `${size}px`;
-    star.style.setProperty('--star-color', colors[Math.floor(Math.random() * colors.length)]);
-    star.style.setProperty('--twinkle-time', `${.7 + Math.random() * 1.8}s`);
-    star.style.animationDelay = `${Math.random() * 1.2}s`;
-    ending.appendChild(star);
-  }
-}
 
 function glowCoverStars(amount, sky = document.getElementById('coverSparkles'), maxTop = 100) {
   const colors = ['#ffe27a','#fff3bf','#ffd23f','#fffaf0'];
