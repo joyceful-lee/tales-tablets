@@ -7,6 +7,25 @@ const status = document.getElementById('status');
 let page = 0;
 let marsSuccess = false;
 let skipTimer;
+// The paper art "boils": its cut edges re-wobble a few times a second, like stop-motion.
+// Hold it still for people who prefer reduced motion.
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const paperNoise = document.getElementById('paperNoise');
+const boilSeeds = [4, 9, 14];
+let boilFrame = 0;
+let boilTimer;
+function syncPaperBoil() {
+  clearInterval(boilTimer);
+  if (reducedMotion.matches || document.hidden) return;
+  boilTimer = setInterval(() => {
+    boilFrame = (boilFrame + 1) % boilSeeds.length;
+    paperNoise.setAttribute('seed', boilSeeds[boilFrame]);
+  }, 300);
+}
+syncPaperBoil();
+reducedMotion.addEventListener?.('change', syncPaperBoil);
+document.addEventListener('visibilitychange', syncPaperBoil);
+
 const pageLabels = ['Cover', 'Night sky', 'Find the parts', 'Build the rocket', 'Launch', 'Mars'];
 
 function isPageComplete(index) {
