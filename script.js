@@ -1003,6 +1003,7 @@ window.addEventListener('resize', () => {
 });
 
 const launchBtn = document.getElementById('launchBtn');
+const launchZone = document.getElementById('launchZone');
 let holdTimer;
 let holdStart;
 let holdFrame;
@@ -1018,6 +1019,7 @@ function startHold(event) {
   if (launched) return;
   holdStart = performance.now();
   launchBtn.classList.add('ready');
+  launchZone.classList.add('charging');
   holdFrame = requestAnimationFrame(holdTick);
   holdTimer = setTimeout(launch, 1000);
   tone(150, .5);
@@ -1027,6 +1029,7 @@ function stopHold() {
   clearTimeout(holdTimer);
   cancelAnimationFrame(holdFrame);
   launchBtn.classList.remove('ready');
+  launchZone.classList.remove('charging');
   launchBtn.style.setProperty('--hold', '0%');
 }
 
@@ -1050,13 +1053,16 @@ function makeFireballPoof() {
 function launch() {
   launched = true;
   launchBtn.classList.remove('ready');
+  launchZone.classList.remove('charging');
+  launchZone.classList.add('lifted');
   document.getElementById('launchRocket').classList.add('go');
   const whoosh = document.getElementById('whoosh');
   makeFireballPoof();
-  whoosh.classList.add('show');
   status.textContent = 'Liftoff!';
   launchBlast();
-  setTimeout(() => { whoosh.classList.remove('show'); show(5); }, 2300);
+  // Let the liftoff play in the yard before the WHEEE! screen takes over.
+  setTimeout(() => whoosh.classList.add('show'), 900);
+  setTimeout(() => { whoosh.classList.remove('show'); show(5); }, 3200);
 }
 launchBtn.addEventListener('pointerdown', startHold);
 ['pointerup','pointerleave','pointercancel'].forEach(name => launchBtn.addEventListener(name, stopHold));
@@ -1207,6 +1213,7 @@ function resetPage(index) {
     launched = false;
     launchBtn.classList.remove('ready');
     launchBtn.style.setProperty('--hold', '0%');
+    launchZone.classList.remove('charging', 'lifted');
     document.getElementById('launchRocket').classList.remove('go');
     document.getElementById('whoosh').classList.remove('show');
     document.getElementById('fireballPoof').replaceChildren();
@@ -1262,8 +1269,7 @@ function glowEndingStars(amount) {
   }
 }
 
-function glowCoverStars(amount) {
-  const sky = document.getElementById('coverSparkles');
+function glowCoverStars(amount, sky = document.getElementById('coverSparkles'), maxTop = 100) {
   const colors = ['#ffe27a','#fff3bf','#ffd23f','#fffaf0'];
   for (let i = 0; i < amount; i += 1) {
     // A scattering of cut-paper stars among small paper dots.
@@ -1272,7 +1278,7 @@ function glowCoverStars(amount) {
     if (isStar) star.innerHTML = '<use href="#icon-star"></use>';
     star.setAttribute('class', isStar ? 'cover-star' : 'cover-star dot');
     star.style.left = `${Math.random() * 100}%`;
-    star.style.top = `${Math.random() * 100}%`;
+    star.style.top = `${Math.random() * maxTop}%`;
     star.style.setProperty('--size', `${isStar ? 10 + Math.random() * 12 : 3 + Math.random() * 3}px`);
     star.style.setProperty('--star-color', colors[Math.floor(Math.random() * colors.length)]);
     star.style.setProperty('--twinkle-time', `${1.6 + Math.random() * 2.4}s`);
@@ -1335,7 +1341,7 @@ function confetti(amount) {
 
 glowCoverStars(44);
 glowSceneStars(document.getElementById('nightSparkles'), 34);
-glowSceneStars(document.getElementById('launchPageSparkles'), 42, 66);
+glowCoverStars(36, document.getElementById('launchPageSparkles'), 62);
 glowSceneStars(document.getElementById('marsSparkles'), 38, 58);
 show(0);
 // The story font is wider than the fallback, so re-fit the verses once it has loaded.
