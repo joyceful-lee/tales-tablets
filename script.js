@@ -1342,7 +1342,7 @@ function confetti(amount) {
 glowCoverStars(44);
 glowSceneStars(document.getElementById('nightSparkles'), 34);
 glowCoverStars(36, document.getElementById('launchPageSparkles'), 62);
-glowSceneStars(document.getElementById('marsSparkles'), 38, 58);
+glowCoverStars(30, document.getElementById('marsSparkles'), 50);
 show(0);
 // The story font is wider than the fallback, so re-fit the verses once it has loaded.
 document.fonts?.ready.then(fitStoryCards);

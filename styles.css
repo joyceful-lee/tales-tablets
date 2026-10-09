@@ -55,7 +55,7 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .cue.reading { background:var(--yellow); color:var(--ink); }
 .cue.reading .cue-icon { background:var(--navy); color:var(--yellow); }
 .playzone { position:relative; min-width:0; min-height:0; width:100%; height:100%; overflow:hidden; isolation:isolate; }
-.svg-defs #icon-rocket [stroke="#17203f"],.svg-defs #icon-kid-rocket [stroke="#17203f"],.svg-defs #icon-astronaut [stroke="#17203f"] { stroke:#4c586b; stroke-width:3; }
+.svg-defs #icon-rocket [stroke="#17203f"],.svg-defs #icon-kid-rocket [stroke="#17203f"] { stroke:#4c586b; stroke-width:3; }
 
 .cover { grid-template-columns:1fr; padding:var(--space-5); place-items:center; text-align:center; background:radial-gradient(ellipse at 50% 40%,#22336f,transparent 70%),linear-gradient(150deg,#141f4a,#1d2a5e 60%,#2c2c63); }
 /* Paper fibres over the whole picture so every piece reads as the same paper. */
@@ -238,26 +238,31 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
 .launch-btn span { position:relative; }
 .launch-btn.ready { animation:shake .12s infinite; }
 
-.mars-craters { position:absolute; inset:0; z-index:1; width:100%; height:100%; pointer-events:none; }
-.mars-craters path[stroke] { fill:none; }
-.mars-zone { background:radial-gradient(ellipse 125% 73% at 69% 113%,#ee7658 0 35%,#e2694e 48%,#d45b45 58%,#ca503e 61.7%,transparent 62%),linear-gradient(#101a42,#293b73); }
-.earth { position:absolute; z-index:2; right:15%; top:2%; width:86px; height:86px; filter:none; }
-.mars-team { position:absolute; z-index:3; left:7%; bottom:16%; display:flex; align-items:end; gap:12px; filter:drop-shadow(0 8px 2px rgba(82,20,31,.28)); }
-.mars-dog { width:96px; height:115px; padding:0; border:0; background:transparent; cursor:pointer; }
-.mars-team>svg:last-child { width:190px; height:278px; }
-.johnny-button { width:108px; height:155px; padding:0; border:0; background:transparent; cursor:pointer; transition:.2s; }
+/* Paper Mars: layered red dunes and craters, the rocket landed at a bump, Johnny with his empty lunchbox. */
+.mars-zone { --johnny-w:clamp(92px,12vw,140px); background:linear-gradient(#0f1a44,#2a3a78); }
+.mars-zone .paper-texture { z-index:1; }
+.mars-ground { position:absolute; z-index:1; left:0; bottom:0; width:100%; height:50%; overflow:visible; }
+.earth { position:absolute; z-index:1; right:14%; top:7%; width:clamp(64px,9vw,96px); aspect-ratio:1; }
+.mars-landing { position:absolute; z-index:2; right:9%; bottom:17%; width:clamp(96px,13vw,150px); }
+.mars-landing>.rocket-art { position:relative; display:block; width:100%; height:auto; aspect-ratio:140/230; overflow:visible; rotate:7deg; transform-origin:50% 90%; filter:drop-shadow(0 10px 6px rgba(80,15,20,.3)); }
+.mars-dust { position:absolute; z-index:3; left:-28%; bottom:6%; width:156%; aspect-ratio:200/60; overflow:visible; }
+.johnny-button { position:absolute; z-index:4; left:12%; bottom:11%; width:var(--johnny-w); aspect-ratio:130/180; padding:0; border:0; background:transparent; cursor:pointer; filter:drop-shadow(0 8px 4px rgba(80,15,20,.3)); transition:transform .2s; }
 .johnny-button:hover { transform:translateY(-4px); }
-.johnny-button svg { width:100%; height:100%; }
+.johnny-button svg { display:block; width:100%; height:100%; overflow:visible; }
 .johnny-button.rumbling { animation:tummy-rumble .16s ease-in-out 8 alternate; transform-origin:50% 68%; }
+.mars-dog { position:absolute; z-index:4; left:calc(12% + var(--johnny-w) + 6px); bottom:10%; width:calc(var(--johnny-w) * .74); aspect-ratio:200/240; padding:0; border:0; background:transparent; cursor:pointer; }
+.mars-dog svg { overflow:visible; }
 .grumble { display:none!important; }
 .grumble::after { content:""; position:absolute; left:34%; bottom:-14px; width:13px; height:13px; border:3px solid var(--ink); border-radius:50%; background:white; }
 .grumble.show { opacity:1; transform:scale(1) rotate(-3deg); }
-.accuracy-game { position:absolute; z-index:6; left:7%; bottom:12%; width:min(188px,34%); color:white; font-weight:900; text-align:center; transition:opacity .28s ease,transform .28s ease; }
+/* The timing meter is a paper card above Johnny: tap him while the strip sits in the GO zone. */
+.accuracy-game { position:absolute; z-index:6; left:calc(12% - 14px); bottom:calc(11% + var(--johnny-w) * 1.385 + 14px); width:calc(var(--johnny-w) + 86px); display:grid; gap:6px; padding:var(--space-2) var(--space-3) var(--space-3); border-radius:4px; background:var(--paper); color:var(--ink); box-shadow:0 3px 0 #e2d2ae,0 10px 16px rgba(10,15,40,.35); rotate:-1.5deg; transition:opacity .28s ease,transform .28s ease; }
 .accuracy-game.complete { opacity:0; transform:translateY(12px) scale(.92); pointer-events:none; }
-.accuracy-track { position:relative; height:16px; overflow:hidden; border:2px solid rgba(255,255,255,.8); border-radius:999px; background:rgba(9,16,41,.55); }
-.accuracy-fill { position:absolute; inset:0 auto 0 0; width:0; border-radius:999px; background:linear-gradient(90deg,#62ddb1,#ffd23f); }
-.accuracy-goal { position:absolute; right:0; top:0; bottom:0; width:18%; display:grid; place-items:center; border-left:1px solid rgba(255,255,255,.45); font-size:.58rem; letter-spacing:.06em; color:#fff6c4; }
-.accuracy-track.ready { border-color:#ffd23f; box-shadow:0 0 14px rgba(255,210,63,.55); }
+.meter-label { font-family:var(--font-display); font-size:clamp(.8rem,1.1vw,.95rem); letter-spacing:.03em; }
+.accuracy-track { position:relative; height:20px; overflow:hidden; border-radius:4px; background:#e9dcbf; box-shadow:inset 0 2px 0 rgba(60,30,10,.15); }
+.accuracy-fill { position:absolute; inset:0 auto 0 0; width:0; background:linear-gradient(90deg,#62ddb1,#ffd23f); }
+.accuracy-goal { position:absolute; right:0; top:0; bottom:0; width:18%; display:grid; place-items:center; background:repeating-linear-gradient(-45deg,rgba(250,90,69,.28) 0 5px,transparent 5px 10px); border-left:2px dashed var(--red); color:var(--red); font-family:var(--font-display); font-size:.7rem; letter-spacing:.04em; }
+.accuracy-track.ready { box-shadow:inset 0 2px 0 rgba(60,30,10,.15),0 0 0 3px var(--yellow); }
 .accuracy-track.miss { animation:nudge .3s ease; }
 
 .bottom-nav { display:grid; grid-template-columns:130px 1fr 130px; align-items:center; gap:var(--space-3); padding:0 var(--space-6); background:var(--navy); border-top:1px solid rgba(255,255,255,.12); z-index:10; }
@@ -375,12 +380,12 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
   .launch-btn { font-size:1rem; box-shadow:inset 0 -7px 0 #c43c33,0 0 0 4px var(--paper),0 5px 0 4px #c9b896,0 10px 12px 4px rgba(0,0,0,.3); }
   .launch-btn::before { inset:-12px; }
   .launch-dog { left:auto; right:calc(4% + 104px); bottom:6%; width:58px; }
-  .mars-team { left:2%; bottom:22%; gap:4px; }
-  .johnny-button { width:66px; height:94px; }
-  .mars-team>svg:last-child { width:105px; height:154px; }
-  .accuracy-game { left:2%; right:auto; top:auto; bottom:14%; width:38%; }
-  .accuracy-track { height:14px; }
-  .accuracy-goal { font-size:.5rem; }
+  .mars-zone { --johnny-w:74px; }
+  .johnny-button { left:6%; }
+  .mars-dog { left:calc(6% + var(--johnny-w) + 4px); }
+  .accuracy-game { left:calc(6% - 6px); width:calc(var(--johnny-w) + 64px); padding:6px var(--space-2) var(--space-2); }
+  .accuracy-track { height:16px; }
+  .mars-landing { right:6%; width:84px; }
   .draw-pad { inset:var(--space-4) var(--space-3) var(--space-3); padding:var(--space-2) var(--space-3); gap:6px; }
   .bp-head { font-size:.68rem; } .bp-head b { font-size:.95rem; }
   .bp-stamp { display:none; }
@@ -389,7 +394,6 @@ h2 { font-size:clamp(2.4rem,5vw,4.5rem); color:var(--navy); }
   .draw-action { min-height:32px; padding:0 10px; font-size:.68rem; }
   .draw-action:first-of-type { margin-left:var(--space-1); }
   .drawn-ship { left:30%; bottom:8%; height:clamp(130px,40%,240px); max-width:50%; }
-  .mars-dog { width:64px; height:77px; }
   .grumble { left:2%; bottom:47%; padding:7px 9px; font-size:.65rem; }
   .bottom-nav { grid-template-columns:auto 1fr auto; padding:0 var(--space-3); }
   .nav-end { gap:var(--space-1); }
